@@ -407,7 +407,7 @@ const player = {
     vy: 0,
     speed: 4.2,
     jumpForce: 13.5,
-    bounceForce: 19, // Pulo mais alto do trampolim
+    bounceForce: 19,
     gravity: 0.6,
     grounded: false,
     facing: 'right',
@@ -463,7 +463,6 @@ function loadLevel(lvl) {
             let landWidth = 240 + Math.random() * 320;
             platforms.push({ x: currentX, y: 440, width: landWidth, height: 100, type: 'dirt' });
 
-            // Trampolim de Cogumelo no chão
             if (Math.random() < 0.45) {
                 trampolines.push({
                     x: currentX + 40 + Math.random() * (landWidth - 100),
@@ -545,7 +544,6 @@ function update() {
 
     player.grounded = false;
 
-    // Colisão Plataformas
     platforms.forEach(p => {
         if (player.x < p.x + p.width &&
             player.x + player.width > p.x &&
@@ -560,7 +558,6 @@ function update() {
         }
     });
 
-    // Colisão Cogumelos Trampolim
     trampolines.forEach(t => {
         if (t.bounceTimer > 0) t.bounceTimer--;
 
@@ -570,14 +567,13 @@ function update() {
             player.y + player.height <= t.y + t.height + player.vy + 6) {
             
             if (player.vy > 0) {
-                player.vy = -player.bounceForce; // Lança bem alto
+                player.vy = -player.bounceForce;
                 player.grounded = false;
-                t.bounceTimer = 10; // Ativa animação de compressão
+                t.bounceTimer = 10;
             }
         }
     });
 
-    // Colisão Água
     waterZones.forEach(w => {
         if (player.x + player.width > w.x && player.x < w.x + w.width && player.y + player.height > w.y + 20) {
             createSplash(player.x + player.width / 2, player.y + player.height);
@@ -589,7 +585,6 @@ function update() {
         takeDamage();
     }
 
-    // Inimigos
     enemies.forEach((enemy, index) => {
         enemy.x += enemy.vx;
         if (enemy.x <= enemy.minX || enemy.x >= enemy.maxX) {
@@ -620,7 +615,6 @@ function update() {
         }
     });
 
-    // Moedas
     coins.forEach(c => {
         if (!c.collected && 
             player.x < c.x + 32 && player.x + player.width > c.x &&
@@ -631,7 +625,6 @@ function update() {
         }
     });
 
-    // Bandeira Final
     if (flag && player.x < flag.x + flag.width && player.x + player.width > flag.x &&
         player.y < flag.y + flag.height && player.y + player.height > flag.y) {
         if (currentLevel < maxLevels) {
@@ -684,7 +677,6 @@ function draw() {
 
     ctx.save();
 
-    // Plataformas
     platforms.forEach(p => {
         let px = p.x - camera.x;
         
@@ -728,17 +720,20 @@ function draw() {
         }
     });
 
-    // Desenhar Cogumelos Trampolim
+    // Desenhar Cogumelos Trampolim com Tronco Gordinho
     trampolines.forEach(t => {
         let tx = t.x - camera.x;
         let ty = t.y;
-        let squish = t.bounceTimer > 0 ? 8 : 0; // Achata quando pisa
+        let squish = t.bounceTimer > 0 ? 8 : 0;
 
-        // Caule do Cogumelo
+        // Caule do Cogumelo Mais Gordinho (alargado para 26px de largura)
         ctx.fillStyle = '#fef3c7';
-        ctx.fillRect(tx + 10, ty + 18 + squish, 16, 18 - squish);
+        ctx.fillRect(tx + 5, ty + 16 + squish, 26, 20 - squish);
+        
+        // Sombras do Caule Gordinho
         ctx.fillStyle = '#d97706';
-        ctx.fillRect(tx + 12, ty + 22 + squish, 4, 10 - squish);
+        ctx.fillRect(tx + 7, ty + 20 + squish, 6, 12 - squish);
+        ctx.fillRect(tx + 23, ty + 20 + squish, 4, 12 - squish);
 
         // Chapéu Vermelho do Cogumelo
         ctx.fillStyle = '#ef4444';
@@ -752,7 +747,6 @@ function draw() {
         ctx.fillRect(tx + 15, ty + 10 + squish, 6, 5);
     });
 
-    // Água
     waterZones.forEach(w => {
         let wx = w.x - camera.x;
         
@@ -769,7 +763,6 @@ function draw() {
         }
     });
 
-    // Moedas
     coins.forEach(c => {
         if (!c.collected) {
             let cx = c.x - camera.x + 16;
@@ -822,7 +815,6 @@ function draw() {
         }
     });
 
-    // Inimigos Roxos
     enemies.forEach(e => {
         let ex = e.x - camera.x;
         let ey = e.y;
@@ -894,7 +886,6 @@ function draw() {
         ctx.restore();
     });
 
-    // Bandeira Final
     if (flag) {
         let fx = flag.x - camera.x;
         ctx.fillStyle = '#94a3b8';
@@ -909,7 +900,6 @@ function draw() {
         ctx.fillRect(fx + flag.width, flag.y + 20, 50, 25);
     }
 
-    // Personagem
     let px = player.x - camera.x;
     let py = player.y;
 
