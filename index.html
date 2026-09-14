@@ -207,6 +207,12 @@
         .btn-dash:active, .btn-dash.pressed {
             background: #a855f7;
         }
+        .btn-dash.cooldown {
+            background: #475569;
+            border-color: #94a3b8;
+            color: #cbd5e1;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -273,6 +279,7 @@ const btnRetry = document.getElementById('btn-retry');
 const btnMenuBack = document.getElementById('btn-menu-back');
 const btnBackMain = document.getElementById('btn-back-main');
 const levelsGrid = document.getElementById('levels-grid');
+const btnDashElem = document.getElementById('btn-dash');
 
 let currentLevel = 1;
 const maxLevels = 20;
@@ -429,6 +436,8 @@ function drawParticles() {
     });
 }
 
+const DASH_COOLDOWN_FRAMES = 12 * 60; // 12 segundos a 60 FPS
+
 const player = {
     x: 80,
     y: 100,
@@ -452,6 +461,8 @@ const player = {
         this.isDashing = false;
         this.dashTimer = 0;
         this.dashCooldown = 0;
+        btnDashElem.innerText = "DASH";
+        btnDashElem.classList.remove('cooldown');
     }
 };
 
@@ -546,20 +557,28 @@ function update() {
     const moveJump = keys['KeyW'] || keys['Space'] || keys['ArrowUp'] || touchControls.jump;
     const moveDash = keys['ShiftLeft'] || keys['KeyK'] || touchControls.dash;
 
-    // Cooldown do Dash
-    if (player.dashCooldown > 0) player.dashCooldown--;
+    // Cooldown do Dash com contador na interface
+    if (player.dashCooldown > 0) {
+        player.dashCooldown--;
+        const secondsLeft = Math.ceil(player.dashCooldown / 60);
+        btnDashElem.innerText = secondsLeft + "s";
+        btnDashElem.classList.add('cooldown');
+    } else {
+        btnDashElem.innerText = "DASH";
+        btnDashElem.classList.remove('cooldown');
+    }
 
-    // Iniciar Dash
+    // Iniciar Dash (recarrega em 12 segundos)
     if (moveDash && player.dashCooldown === 0 && !player.isDashing) {
         player.isDashing = true;
-        player.dashTimer = 10; // Duração do dash em frames
-        player.dashCooldown = 35; // Cooldown do dash
+        player.dashTimer = 10; 
+        player.dashCooldown = DASH_COOLDOWN_FRAMES; // 12 segundos
         createBlackSmoke(player.x + player.width / 2, player.y + player.height / 2, player.facing);
     }
 
     if (player.isDashing) {
         player.dashTimer--;
-        player.vy = 0; // Trava a gravidade durante o dash
+        player.vy = 0;
         const dashSpeed = 12;
         player.vx = player.facing === 'right' ? dashSpeed : -dashSpeed;
 
@@ -836,7 +855,6 @@ function draw() {
 
         ctx.save();
 
-        // Animação de pulsação/deslize da gelatina
         let squish = Math.sin(gameTime * 0.2 + e.x) * 4;
         let slimeH = e.height + squish;
         let slimeW = e.width - squish;
@@ -846,33 +864,27 @@ function draw() {
             ctx.fillStyle = '#ef4444';
             ctx.fillRect(ex, drawY, slimeW, slimeH);
         } else {
-            // Corpo Translucido da Gelatina Verde
             let slimeGrad = ctx.createLinearGradient(ex, drawY, ex, drawY + slimeH);
             slimeGrad.addColorStop(0, '#86efac');
             slimeGrad.addColorStop(0.5, '#22c55e');
             slimeGrad.addColorStop(1, '#15803d');
             ctx.fillStyle = slimeGrad;
 
-            // Formato arredondado estilo gelatina
             ctx.fillRect(ex + 4, drawY, slimeW - 8, slimeH);
             ctx.fillRect(ex, drawY + 6, slimeW, slimeH - 6);
 
-            // Brilho da Gelatina na parte superior
             ctx.fillStyle = '#bbf7d0';
             ctx.fillRect(ex + 6, drawY + 2, slimeW - 12, 4);
 
-            // Olhos Grandes e Fofos de Lesma
             let eyeDir = e.vx > 0 ? 4 : -2;
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(ex + 8 + eyeDir, drawY + 8, 8, 10);
             ctx.fillRect(ex + 22 + eyeDir, drawY + 8, 8, 10);
 
-            // Pupilas
             ctx.fillStyle = '#0f172a';
             ctx.fillRect(ex + 11 + eyeDir, drawY + 11, 4, 5);
             ctx.fillRect(ex + 25 + eyeDir, drawY + 11, 4, 5);
 
-            // Antenas de Lesma
             ctx.fillStyle = '#22c55e';
             ctx.fillRect(ex + 10, drawY - 6, 4, 6);
             ctx.fillRect(ex + 24, drawY - 6, 4, 6);
