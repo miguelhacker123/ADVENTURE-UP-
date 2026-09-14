@@ -57,7 +57,6 @@
             box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
         }
         
-        /* Botão de Pause no Topo Centro */
         #btn-pause-top {
             pointer-events: auto;
             background: #eab308;
@@ -75,7 +74,6 @@
             box-shadow: 1px 1px 0px #0f172a;
         }
 
-        /* Modais / Menus Overlays */
         .modal-overlay {
             position: absolute;
             top: 0;
@@ -117,7 +115,6 @@
             background: #3b82f6;
         }
 
-        /* Grade de Seleção de Fases */
         #levels-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -147,7 +144,6 @@
             color: #000;
         }
 
-        /* Botões de Controle 100% Quadrados */
         #controls-container {
             position: absolute;
             bottom: 20px;
@@ -232,7 +228,7 @@
 
     <canvas id="canvas" width="960" height="540"></canvas>
 
-    <!-- Botões Totalmente Quadrados -->
+    <!-- Controls -->
     <div id="controls-container">
         <div class="d-pad">
             <div class="btn-ctrl" id="btn-left">&lt;</div>
@@ -251,7 +247,6 @@ const ctx = canvas.getContext('2d');
 const coinsTxt = document.getElementById('coins-txt');
 const livesTxt = document.getElementById('lives-txt');
 
-// Elementos de UI dos Menus
 const mainMenu = document.getElementById('main-menu');
 const pauseMenu = document.getElementById('pause-menu');
 const levelsMenu = document.getElementById('levels-menu');
@@ -295,7 +290,6 @@ setupBtn('btn-left', 'left');
 setupBtn('btn-right', 'right');
 setupBtn('btn-jump', 'jump');
 
-// Gerar botões de seleção de fases
 for (let i = 1; i <= maxLevels; i++) {
     const lvlBtn = document.createElement('div');
     lvlBtn.className = 'lvl-btn';
@@ -308,31 +302,11 @@ for (let i = 1; i <= maxLevels; i++) {
     levelsGrid.appendChild(lvlBtn);
 }
 
-// Lógica dos Botões de Menu e Pause
-btnPlay.onclick = () => {
-    startGame();
-};
-
-btnFasesMenu.onclick = () => {
-    mainMenu.style.display = 'none';
-    levelsMenu.style.display = 'flex';
-};
-
-btnBackMain.onclick = () => {
-    levelsMenu.style.display = 'none';
-    mainMenu.style.display = 'flex';
-};
-
-btnPauseTop.onclick = () => {
-    if (inMainMenu) return;
-    isPaused = true;
-    pauseMenu.style.display = 'flex';
-};
-
-btnResume.onclick = () => {
-    isPaused = false;
-    pauseMenu.style.display = 'none';
-};
+btnPlay.onclick = () => { startGame(); };
+btnFasesMenu.onclick = () => { mainMenu.style.display = 'none'; levelsMenu.style.display = 'flex'; };
+btnBackMain.onclick = () => { levelsMenu.style.display = 'none'; mainMenu.style.display = 'flex'; };
+btnPauseTop.onclick = () => { if (inMainMenu) return; isPaused = true; pauseMenu.style.display = 'flex'; };
+btnResume.onclick = () => { isPaused = false; pauseMenu.style.display = 'none'; };
 
 btnRetry.onclick = () => {
     isPaused = false;
@@ -368,7 +342,6 @@ function startGame() {
 
 const camera = { x: 0, y: 0 };
 
-// Nuvens Quadradas Estilo Minecraft
 let clouds = [];
 for(let i=0; i<12; i++) {
     clouds.push({
@@ -380,7 +353,6 @@ for(let i=0; i<12; i++) {
     });
 }
 
-// Partículas
 let particles = [];
 function createSplash(x, y) {
     for (let i = 0; i < 15; i++) {
@@ -426,7 +398,6 @@ function drawParticles() {
     });
 }
 
-// Jogador (Velocidade reduzida para 4.2)
 const player = {
     x: 80,
     y: 100,
@@ -436,6 +407,7 @@ const player = {
     vy: 0,
     speed: 4.2,
     jumpForce: 13.5,
+    bounceForce: 19, // Pulo mais alto do trampolim
     gravity: 0.6,
     grounded: false,
     facing: 'right',
@@ -451,32 +423,30 @@ let platforms = [];
 let waterZones = [];
 let coins = [];
 let enemies = [];
+let trampolines = [];
 let flag = null;
 
-// GERAÇÃO DE NÍVEIS (Fases significativamente mais longas)
 function loadLevel(lvl) {
     platforms = [];
     waterZones = [];
     coins = [];
     enemies = [];
+    trampolines = [];
     player.reset();
 
     const worldWidth = 6000 + lvl * 800;
     let currentX = 0;
 
-    // Plataforma inicial segura
     platforms.push({ x: 0, y: 440, width: 480, height: 100, type: 'dirt' });
     currentX = 480;
 
     while (currentX < worldWidth - 500) {
         let rand = Math.random();
 
-        // Rio / Água
         if (rand < 0.35) {
             let riverWidth = 160 + Math.random() * 160;
             waterZones.push({ x: currentX, y: 460, width: riverWidth, height: 80 });
 
-            // Troncos estilo Minecraft sobre o rio
             let logs = Math.floor(riverWidth / 80);
             for (let i = 0; i < logs; i++) {
                 platforms.push({
@@ -489,12 +459,21 @@ function loadLevel(lvl) {
             }
             currentX += riverWidth;
         } 
-        // Terra Minecraft
         else {
             let landWidth = 240 + Math.random() * 320;
             platforms.push({ x: currentX, y: 440, width: landWidth, height: 100, type: 'dirt' });
 
-            // Plataformas Voadoras de Tronco
+            // Trampolim de Cogumelo no chão
+            if (Math.random() < 0.45) {
+                trampolines.push({
+                    x: currentX + 40 + Math.random() * (landWidth - 100),
+                    y: 404,
+                    width: 36,
+                    height: 36,
+                    bounceTimer: 0
+                });
+            }
+
             if (Math.random() > 0.4) {
                 let platY = 300 - Math.random() * 50;
                 platforms.push({
@@ -509,7 +488,6 @@ function loadLevel(lvl) {
                 coins.push({ x: currentX + 120, y: platY - 45, collected: false });
             }
 
-            // Inimigos Roxos Detalhados (Monstros 2 HP)
             if (Math.random() < 0.3 + (lvl * 0.02)) {
                 enemies.push({
                     x: currentX + 100,
@@ -524,7 +502,6 @@ function loadLevel(lvl) {
                 });
             }
 
-            // Moedas no chão
             if (Math.random() > 0.3) {
                 coins.push({ x: currentX + landWidth / 2, y: 390, collected: false });
             }
@@ -533,12 +510,10 @@ function loadLevel(lvl) {
         }
     }
 
-    // Plataforma Final e Bandeira
     platforms.push({ x: currentX, y: 440, width: 600, height: 100, type: 'dirt' });
     flag = { x: currentX + 250, y: 260, width: 24, height: 180 };
 }
 
-// ATUALIZAÇÃO DO JOGO
 function update() {
     if (gameOver || gameWon || isPaused || inMainMenu) return;
     gameTime++;
@@ -568,8 +543,9 @@ function update() {
 
     if (player.x < 0) player.x = 0;
 
-    // Colisão com Plataformas
     player.grounded = false;
+
+    // Colisão Plataformas
     platforms.forEach(p => {
         if (player.x < p.x + p.width &&
             player.x + player.width > p.x &&
@@ -584,7 +560,24 @@ function update() {
         }
     });
 
-    // Colisão com Água
+    // Colisão Cogumelos Trampolim
+    trampolines.forEach(t => {
+        if (t.bounceTimer > 0) t.bounceTimer--;
+
+        if (player.x < t.x + t.width &&
+            player.x + player.width > t.x &&
+            player.y + player.height >= t.y &&
+            player.y + player.height <= t.y + t.height + player.vy + 6) {
+            
+            if (player.vy > 0) {
+                player.vy = -player.bounceForce; // Lança bem alto
+                player.grounded = false;
+                t.bounceTimer = 10; // Ativa animação de compressão
+            }
+        }
+    });
+
+    // Colisão Água
     waterZones.forEach(w => {
         if (player.x + player.width > w.x && player.x < w.x + w.width && player.y + player.height > w.y + 20) {
             createSplash(player.x + player.width / 2, player.y + player.height);
@@ -596,7 +589,7 @@ function update() {
         takeDamage();
     }
 
-    // Inimigos Roxos (Sistema de 2 Pulos, Piscada e Fumaça ao Morrer)
+    // Inimigos
     enemies.forEach((enemy, index) => {
         enemy.x += enemy.vx;
         if (enemy.x <= enemy.minX || enemy.x >= enemy.maxX) {
@@ -610,11 +603,10 @@ function update() {
             player.y < enemy.y + enemy.height &&
             player.y + player.height > enemy.y) {
             
-            // Pular em cima do bicho
             if (player.vy > 0 && player.y + player.height - player.vy <= enemy.y + 16) {
                 player.vy = -player.jumpForce * 0.65;
                 enemy.hp--;
-                enemy.flashTimer = 18; // Tempo de piscada vermelha
+                enemy.flashTimer = 18;
 
                 if (enemy.hp <= 0) {
                     createSmoke(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
@@ -628,7 +620,7 @@ function update() {
         }
     });
 
-    // Coletar Moedas
+    // Moedas
     coins.forEach(c => {
         if (!c.collected && 
             player.x < c.x + 32 && player.x + player.width > c.x &&
@@ -639,7 +631,7 @@ function update() {
         }
     });
 
-    // Final da Fase
+    // Bandeira Final
     if (flag && player.x < flag.x + flag.width && player.x + player.width > flag.x &&
         player.y < flag.y + flag.height && player.y + player.height > flag.y) {
         if (currentLevel < maxLevels) {
@@ -670,23 +662,19 @@ function takeDamage() {
     }
 }
 
-// DESENHO / GRÁFICOS
 function draw() {
-    // Céu azul estilo pixel
     let skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     skyGradient.addColorStop(0, '#0284c7');
     skyGradient.addColorStop(1, '#38bdf8');
     ctx.fillStyle = skyGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Sol Quadrado estilo Minecraft
     let sunX = 800 - camera.x * 0.04;
     ctx.fillStyle = '#fef08a';
     ctx.fillRect(sunX, 40, 60, 60);
     ctx.fillStyle = '#fde047';
     ctx.fillRect(sunX + 6, 46, 48, 48);
 
-    // Nuvens Quadradas
     clouds.forEach(c => {
         let cx = c.x - camera.x * 0.15;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
@@ -696,16 +684,14 @@ function draw() {
 
     ctx.save();
 
-    // DESENHAR BLOCOS DE TERRA MINECRAFT
+    // Plataformas
     platforms.forEach(p => {
         let px = p.x - camera.x;
         
         if (p.type === 'dirt') {
-            // Corpo da Terra
             ctx.fillStyle = '#57331c';
             ctx.fillRect(px, p.y, p.width, p.height);
 
-            // Textura interna da terra
             ctx.fillStyle = '#3d2314';
             for (let bx = 0; bx < p.width; bx += 16) {
                 for (let by = 16; by < p.height; by += 16) {
@@ -715,22 +701,18 @@ function draw() {
                 }
             }
 
-            // Camada de Grama Superior
             ctx.fillStyle = '#4ade80';
             ctx.fillRect(px, p.y, p.width, 14);
 
-            // Bloco de Grama Densa
             ctx.fillStyle = '#16a34a';
             ctx.fillRect(px, p.y + 10, p.width, 4);
 
-            // Detalhes de grama caindo sobre a terra
             ctx.fillStyle = '#22c55e';
             for (let g = 0; g < p.width; g += 16) {
                 ctx.fillRect(px + g, p.y + 14, 8, 6);
                 ctx.fillRect(px + g + 8, p.y + 14, 4, 3);
             }
         } 
-        // TRONCOS ESTILO MINECRAFT
         else if (p.type === 'log') {
             ctx.fillStyle = '#78350f';
             ctx.fillRect(px, p.y, p.width, p.height);
@@ -746,7 +728,31 @@ function draw() {
         }
     });
 
-    // RIO / ÁGUA REALISTA COM ONDAS
+    // Desenhar Cogumelos Trampolim
+    trampolines.forEach(t => {
+        let tx = t.x - camera.x;
+        let ty = t.y;
+        let squish = t.bounceTimer > 0 ? 8 : 0; // Achata quando pisa
+
+        // Caule do Cogumelo
+        ctx.fillStyle = '#fef3c7';
+        ctx.fillRect(tx + 10, ty + 18 + squish, 16, 18 - squish);
+        ctx.fillStyle = '#d97706';
+        ctx.fillRect(tx + 12, ty + 22 + squish, 4, 10 - squish);
+
+        // Chapéu Vermelho do Cogumelo
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(tx, ty + squish, 36, 18);
+        ctx.fillRect(tx + 4, ty - 4 + squish, 28, 4);
+
+        // Pontas Brancas do Cogumelo
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(tx + 6, ty + 4 + squish, 6, 6);
+        ctx.fillRect(tx + 24, ty + 4 + squish, 6, 6);
+        ctx.fillRect(tx + 15, ty + 10 + squish, 6, 5);
+    });
+
+    // Água
     waterZones.forEach(w => {
         let wx = w.x - camera.x;
         
@@ -763,31 +769,27 @@ function draw() {
         }
     });
 
-    // MOEDAS MAIORES E MAIS REALISTAS (3D / METÁLICAS COM ROTAÇÃO E GLOW)
+    // Moedas
     coins.forEach(c => {
         if (!c.collected) {
             let cx = c.x - camera.x + 16;
             let cy = c.y + 16;
             
-            // Animação de rotação 3D
             let scaleX = Math.abs(Math.sin((gameTime + c.x) * 0.05));
             let coinW = Math.max(4, 30 * scaleX);
             let coinH = 32;
 
             ctx.save();
             
-            // Brilho dourado ao fundo (Glow Effect)
             let glow = ctx.createRadialGradient(cx, cy, 2, cx, cy, 22);
             glow.addColorStop(0, 'rgba(255, 215, 0, 0.6)');
             glow.addColorStop(1, 'rgba(255, 215, 0, 0)');
             ctx.fillStyle = glow;
             ctx.fillRect(cx - 22, cy - 22, 44, 44);
 
-            // Borda Metálica Externa (Sombra/Relevo)
             ctx.fillStyle = '#b45309';
             ctx.fillRect(cx - coinW/2 - 1, cy - coinH/2 - 1, coinW + 2, coinH + 2);
 
-            // Camada Principal - Gradiente Metálico Realista
             let goldGrad = ctx.createLinearGradient(cx - coinW/2, cy - coinH/2, cx + coinW/2, cy + coinH/2);
             goldGrad.addColorStop(0, '#fef08a');
             goldGrad.addColorStop(0.3, '#f59e0b');
@@ -796,7 +798,6 @@ function draw() {
             ctx.fillStyle = goldGrad;
             ctx.fillRect(cx - coinW/2, cy - coinH/2, coinW, coinH);
 
-            // Borda Interna Cizelada
             if (coinW > 12) {
                 ctx.fillStyle = '#b45309';
                 ctx.fillRect(cx - coinW/2 + 3, cy - coinH/2 + 3, coinW - 6, coinH - 6);
@@ -804,7 +805,6 @@ function draw() {
                 ctx.fillStyle = '#fbbf24';
                 ctx.fillRect(cx - coinW/2 + 4, cy - coinH/2 + 4, coinW - 8, coinH - 8);
 
-                // Símbolo $ gravado no centro
                 ctx.fillStyle = '#78350f';
                 ctx.fillRect(cx - 2, cy - 8, 4, 16);
                 ctx.fillRect(cx - 5, cy - 6, 10, 3);
@@ -812,7 +812,6 @@ function draw() {
                 ctx.fillRect(cx - 5, cy + 4, 10, 3);
             }
 
-            // Reflexo de Luz Metálico (Flash)
             let flashX = cx - coinW/2 + ((gameTime * 2 + c.x) % (coinW + 10)) - 5;
             if (flashX > cx - coinW/2 && flashX < cx + coinW/2) {
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
@@ -823,7 +822,7 @@ function draw() {
         }
     });
 
-    // INIMIGOS ROXOS REALISTAS, BONITOS E DETALHADOS (COM ANIMAÇÕES, CHIFRES, SOMBRAS E PISCADA VERMELHA)
+    // Inimigos Roxos
     enemies.forEach(e => {
         let ex = e.x - camera.x;
         let ey = e.y;
@@ -831,22 +830,18 @@ function draw() {
 
         ctx.save();
 
-        // Sombra suave sob o monstro
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.fillRect(ex + 4, ey + e.height - 4, e.width - 8, 6);
 
-        // Animação de respiração / passos levemente flutuante
         let bounce = Math.sin(gameTime * 0.15) * 2;
         ey += bounce;
 
         if (isFlashing) {
-            // Estado de Dano: Piscando Vermelho brilhante
             ctx.fillStyle = '#ef4444';
             ctx.fillRect(ex, ey, e.width, e.height);
             ctx.fillStyle = '#f87171';
             ctx.fillRect(ex + 4, ey + 4, e.width - 8, e.height - 8);
         } else {
-            // Corpo Principal Gradiente Roxo / Violeta Profundo
             let bodyGrad = ctx.createLinearGradient(ex, ey, ex + e.width, ey + e.height);
             bodyGrad.addColorStop(0, '#a855f7');
             bodyGrad.addColorStop(0.5, '#7e22ce');
@@ -854,13 +849,11 @@ function draw() {
             ctx.fillStyle = bodyGrad;
             ctx.fillRect(ex, ey, e.width, e.height);
 
-            // Borda Cizelada Sombreada Realista
             ctx.fillStyle = '#581c87';
             ctx.fillRect(ex, ey + e.height - 6, e.width, 6);
             ctx.fillRect(ex, ey, 4, e.height);
             ctx.fillRect(ex + e.width - 4, ey, 4, e.height);
 
-            // Chifres Demoníacos Pixelados de Cristal
             ctx.fillStyle = '#e9d5ff';
             ctx.fillRect(ex + 6, ey - 8, 6, 8);
             ctx.fillRect(ex + e.width - 12, ey - 8, 6, 8);
@@ -868,36 +861,29 @@ function draw() {
             ctx.fillRect(ex + 8, ey - 6, 4, 6);
             ctx.fillRect(ex + e.width - 10, ey - 6, 4, 6);
 
-            // Olhos Ameaçadores Amarelos Brilhantes com Íris Vermelha
             let look = e.vx > 0 ? 4 : -2;
             ctx.fillStyle = '#fef08a';
             ctx.fillRect(ex + 8 + look, ey + 12, 10, 10);
             ctx.fillRect(ex + 24 + look, ey + 12, 10, 10);
 
-            // Pupila Vermelha Mau
             ctx.fillStyle = '#dc2626';
             ctx.fillRect(ex + 12 + look, ey + 14, 4, 6);
             ctx.fillRect(ex + 28 + look, ey + 14, 4, 6);
 
-            // Brilho dos Olhos
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(ex + 9 + look, ey + 13, 3, 3);
             ctx.fillRect(ex + 25 + look, ey + 13, 3, 3);
 
-            // Boca com Dentes Afiados Reais
             ctx.fillStyle = '#1e1b4b';
             ctx.fillRect(ex + 10, ey + 28, e.width - 20, 8);
 
             ctx.fillStyle = '#ffffff';
-            // Dentes Superiores
             ctx.fillRect(ex + 12, ey + 28, 4, 4);
             ctx.fillRect(ex + 20, ey + 28, 4, 4);
             ctx.fillRect(ex + 28, ey + 28, 4, 4);
-            // Dente Inferior
             ctx.fillRect(ex + 16, ey + 32, 4, 4);
             ctx.fillRect(ex + 24, ey + 32, 4, 4);
 
-            // Indicador de Vida (Mostra se falta 1 pulo com machucado visual)
             if (e.hp === 1) {
                 ctx.fillStyle = '#dc2626';
                 ctx.fillRect(ex + 8, ey + 4, 10, 3);
@@ -908,7 +894,7 @@ function draw() {
         ctx.restore();
     });
 
-    // BANDEIRA DE FINALIZAÇÃO
+    // Bandeira Final
     if (flag) {
         let fx = flag.x - camera.x;
         ctx.fillStyle = '#94a3b8';
@@ -923,7 +909,7 @@ function draw() {
         ctx.fillRect(fx + flag.width, flag.y + 20, 50, 25);
     }
 
-    // JOGADOR
+    // Personagem
     let px = player.x - camera.x;
     let py = player.y;
 
@@ -952,7 +938,6 @@ function draw() {
 
     ctx.restore();
 
-    // GAME OVER OVERLAY
     if (gameOver) {
         ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -965,7 +950,6 @@ function draw() {
         ctx.fillText('RECARREGUE A PAGINA PARA RECOMEÇAR', canvas.width / 2, canvas.height / 2 + 30);
     }
 
-    // VITÓRIA OVERLAY
     if (gameWon) {
         ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -979,7 +963,6 @@ function draw() {
     }
 }
 
-// LOOP PRINCIPAL
 function gameLoop() {
     update();
     draw();
