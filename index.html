@@ -160,6 +160,10 @@
             gap: 12px;
             pointer-events: auto;
         }
+        .jump-pad {
+            flex-direction: column;
+            align-items: flex-end;
+        }
         .btn-ctrl {
             width: 64px;
             height: 64px;
@@ -192,6 +196,16 @@
         }
         .btn-jump:active, .btn-jump.pressed {
             background: #22c55e;
+        }
+        .btn-dash {
+            width: 120px;
+            height: 48px;
+            background: #9333ea;
+            border-color: #e9d5ff;
+            font-size: 13px;
+        }
+        .btn-dash:active, .btn-dash.pressed {
+            background: #a855f7;
         }
     </style>
 </head>
@@ -235,6 +249,7 @@
             <div class="btn-ctrl" id="btn-right">&gt;</div>
         </div>
         <div class="jump-pad">
+            <div class="btn-ctrl btn-dash" id="btn-dash">DASH</div>
             <div class="btn-ctrl btn-jump" id="btn-jump">PULAR</div>
         </div>
     </div>
@@ -270,7 +285,7 @@ let inMainMenu = true;
 let gameTime = 0;
 
 const keys = {};
-const touchControls = { left: false, right: false, jump: false };
+const touchControls = { left: false, right: false, jump: false, dash: false };
 
 window.addEventListener('keydown', e => keys[e.code] = true);
 window.addEventListener('keyup', e => keys[e.code] = false);
@@ -289,6 +304,7 @@ function setupBtn(id, controlProp) {
 setupBtn('btn-left', 'left');
 setupBtn('btn-right', 'right');
 setupBtn('btn-jump', 'jump');
+setupBtn('btn-dash', 'dash');
 
 for (let i = 1; i <= maxLevels; i++) {
     const lvlBtn = document.createElement('div');
@@ -381,6 +397,21 @@ function createSmoke(x, y) {
     }
 }
 
+function createBlackSmoke(x, y, facing) {
+    const dir = facing === 'right' ? -1 : 1;
+    for (let i = 0; i < 12; i++) {
+        particles.push({
+            x: x,
+            y: y + Math.random() * 30 - 15,
+            vx: (dir * (Math.random() * 4 + 2)),
+            vy: (Math.random() - 0.5) * 3,
+            size: Math.random() * 10 + 4,
+            color: Math.random() > 0.3 ? '#1e293b' : '#0f172a',
+            life: 20
+        });
+    }
+}
+
 function updateParticles() {
     for (let i = particles.length - 1; i >= 0; i--) {
         let p = particles[i];
@@ -407,15 +438,20 @@ const player = {
     vy: 0,
     speed: 4.2,
     jumpForce: 13.5,
-    bounceForce: 19,
     gravity: 0.6,
     grounded: false,
     facing: 'right',
+    isDashing: false,
+    dashTimer: 0,
+    dashCooldown: 0,
     reset: function() {
         this.x = 80;
         this.y = 100;
         this.vx = 0;
         this.vy = 0;
+        this.isDashing = false;
+        this.dashTimer = 0;
+        this.dashCooldown = 0;
     }
 };
 
@@ -423,7 +459,6 @@ let platforms = [];
 let waterZones = [];
 let coins = [];
 let enemies = [];
-let trampolines = [];
 let flag = null;
 
 function loadLevel(lvl) {
@@ -431,7 +466,6 @@ function loadLevel(lvl) {
     waterZones = [];
     coins = [];
     enemies = [];
-    trampolines = [];
     player.reset();
 
     const worldWidth = 6000 + lvl * 800;
@@ -463,16 +497,6 @@ function loadLevel(lvl) {
             let landWidth = 240 + Math.random() * 320;
             platforms.push({ x: currentX, y: 440, width: landWidth, height: 100, type: 'dirt' });
 
-            if (Math.random() < 0.45) {
-                trampolines.push({
-                    x: currentX + 40 + Math.random() * (landWidth - 100),
-                    y: 404,
-                    width: 36,
-                    height: 36,
-                    bounceTimer: 0
-                });
-            }
-
             if (Math.random() > 0.4) {
                 let platY = 300 - Math.random() * 50;
                 platforms.push({
@@ -490,9 +514,9 @@ function loadLevel(lvl) {
             if (Math.random() < 0.3 + (lvl * 0.02)) {
                 enemies.push({
                     x: currentX + 100,
-                    y: 396,
+                    y: 408,
                     width: 44,
-                    height: 44,
+                    height: 32,
                     vx: (Math.random() > 0.5 ? 1 : -1) * (1.8 + lvl * 0.1),
                     minX: currentX,
                     maxX: currentX + landWidth - 44,
@@ -520,23 +544,47 @@ function update() {
     const moveLeft = keys['KeyA'] || keys['ArrowLeft'] || touchControls.left;
     const moveRight = keys['KeyD'] || keys['ArrowRight'] || touchControls.right;
     const moveJump = keys['KeyW'] || keys['Space'] || keys['ArrowUp'] || touchControls.jump;
+    const moveDash = keys['ShiftLeft'] || keys['KeyK'] || touchControls.dash;
 
-    if (moveLeft) {
-        player.vx = -player.speed;
-        player.facing = 'left';
-    } else if (moveRight) {
-        player.vx = player.speed;
-        player.facing = 'right';
+    // Cooldown do Dash
+    if (player.dashCooldown > 0) player.dashCooldown--;
+
+    // Iniciar Dash
+    if (moveDash && player.dashCooldown === 0 && !player.isDashing) {
+        player.isDashing = true;
+        player.dashTimer = 10; // Duração do dash em frames
+        player.dashCooldown = 35; // Cooldown do dash
+        createBlackSmoke(player.x + player.width / 2, player.y + player.height / 2, player.facing);
+    }
+
+    if (player.isDashing) {
+        player.dashTimer--;
+        player.vy = 0; // Trava a gravidade durante o dash
+        const dashSpeed = 12;
+        player.vx = player.facing === 'right' ? dashSpeed : -dashSpeed;
+
+        if (player.dashTimer <= 0) {
+            player.isDashing = false;
+        }
     } else {
-        player.vx *= 0.75;
+        if (moveLeft) {
+            player.vx = -player.speed;
+            player.facing = 'left';
+        } else if (moveRight) {
+            player.vx = player.speed;
+            player.facing = 'right';
+        } else {
+            player.vx *= 0.75;
+        }
+
+        if (moveJump && player.grounded) {
+            player.vy = -player.jumpForce;
+            player.grounded = false;
+        }
+
+        player.vy += player.gravity;
     }
 
-    if (moveJump && player.grounded) {
-        player.vy = -player.jumpForce;
-        player.grounded = false;
-    }
-
-    player.vy += player.gravity;
     player.x += player.vx;
     player.y += player.vy;
 
@@ -544,6 +592,7 @@ function update() {
 
     player.grounded = false;
 
+    // Colisão Plataformas
     platforms.forEach(p => {
         if (player.x < p.x + p.width &&
             player.x + player.width > p.x &&
@@ -558,22 +607,7 @@ function update() {
         }
     });
 
-    trampolines.forEach(t => {
-        if (t.bounceTimer > 0) t.bounceTimer--;
-
-        if (player.x < t.x + t.width &&
-            player.x + player.width > t.x &&
-            player.y + player.height >= t.y &&
-            player.y + player.height <= t.y + t.height + player.vy + 6) {
-            
-            if (player.vy > 0) {
-                player.vy = -player.bounceForce;
-                player.grounded = false;
-                t.bounceTimer = 10;
-            }
-        }
-    });
-
+    // Colisão Água
     waterZones.forEach(w => {
         if (player.x + player.width > w.x && player.x < w.x + w.width && player.y + player.height > w.y + 20) {
             createSplash(player.x + player.width / 2, player.y + player.height);
@@ -585,6 +619,7 @@ function update() {
         takeDamage();
     }
 
+    // Inimigos Gelatina Verde / Lesma
     enemies.forEach((enemy, index) => {
         enemy.x += enemy.vx;
         if (enemy.x <= enemy.minX || enemy.x >= enemy.maxX) {
@@ -615,6 +650,7 @@ function update() {
         }
     });
 
+    // Moedas
     coins.forEach(c => {
         if (!c.collected && 
             player.x < c.x + 32 && player.x + player.width > c.x &&
@@ -625,6 +661,7 @@ function update() {
         }
     });
 
+    // Bandeira Final
     if (flag && player.x < flag.x + flag.width && player.x + player.width > flag.x &&
         player.y < flag.y + flag.height && player.y + player.height > flag.y) {
         if (currentLevel < maxLevels) {
@@ -677,6 +714,7 @@ function draw() {
 
     ctx.save();
 
+    // Plataformas
     platforms.forEach(p => {
         let px = p.x - camera.x;
         
@@ -720,33 +758,7 @@ function draw() {
         }
     });
 
-    // Desenhar Cogumelos Trampolim com Tronco Gordinho
-    trampolines.forEach(t => {
-        let tx = t.x - camera.x;
-        let ty = t.y;
-        let squish = t.bounceTimer > 0 ? 8 : 0;
-
-        // Caule do Cogumelo Mais Gordinho (alargado para 26px de largura)
-        ctx.fillStyle = '#fef3c7';
-        ctx.fillRect(tx + 5, ty + 16 + squish, 26, 20 - squish);
-        
-        // Sombras do Caule Gordinho
-        ctx.fillStyle = '#d97706';
-        ctx.fillRect(tx + 7, ty + 20 + squish, 6, 12 - squish);
-        ctx.fillRect(tx + 23, ty + 20 + squish, 4, 12 - squish);
-
-        // Chapéu Vermelho do Cogumelo
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(tx, ty + squish, 36, 18);
-        ctx.fillRect(tx + 4, ty - 4 + squish, 28, 4);
-
-        // Pontas Brancas do Cogumelo
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(tx + 6, ty + 4 + squish, 6, 6);
-        ctx.fillRect(tx + 24, ty + 4 + squish, 6, 6);
-        ctx.fillRect(tx + 15, ty + 10 + squish, 6, 5);
-    });
-
+    // Água
     waterZones.forEach(w => {
         let wx = w.x - camera.x;
         
@@ -763,6 +775,7 @@ function draw() {
         }
     });
 
+    // Moedas
     coins.forEach(c => {
         if (!c.collected) {
             let cx = c.x - camera.x + 16;
@@ -815,6 +828,7 @@ function draw() {
         }
     });
 
+    // Inimigos - Gelatina Verde / Lesma
     enemies.forEach(e => {
         let ex = e.x - camera.x;
         let ey = e.y;
@@ -822,70 +836,55 @@ function draw() {
 
         ctx.save();
 
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        ctx.fillRect(ex + 4, ey + e.height - 4, e.width - 8, 6);
-
-        let bounce = Math.sin(gameTime * 0.15) * 2;
-        ey += bounce;
+        // Animação de pulsação/deslize da gelatina
+        let squish = Math.sin(gameTime * 0.2 + e.x) * 4;
+        let slimeH = e.height + squish;
+        let slimeW = e.width - squish;
+        let drawY = ey + (e.height - slimeH);
 
         if (isFlashing) {
             ctx.fillStyle = '#ef4444';
-            ctx.fillRect(ex, ey, e.width, e.height);
-            ctx.fillStyle = '#f87171';
-            ctx.fillRect(ex + 4, ey + 4, e.width - 8, e.height - 8);
+            ctx.fillRect(ex, drawY, slimeW, slimeH);
         } else {
-            let bodyGrad = ctx.createLinearGradient(ex, ey, ex + e.width, ey + e.height);
-            bodyGrad.addColorStop(0, '#a855f7');
-            bodyGrad.addColorStop(0.5, '#7e22ce');
-            bodyGrad.addColorStop(1, '#3b0764');
-            ctx.fillStyle = bodyGrad;
-            ctx.fillRect(ex, ey, e.width, e.height);
+            // Corpo Translucido da Gelatina Verde
+            let slimeGrad = ctx.createLinearGradient(ex, drawY, ex, drawY + slimeH);
+            slimeGrad.addColorStop(0, '#86efac');
+            slimeGrad.addColorStop(0.5, '#22c55e');
+            slimeGrad.addColorStop(1, '#15803d');
+            ctx.fillStyle = slimeGrad;
 
-            ctx.fillStyle = '#581c87';
-            ctx.fillRect(ex, ey + e.height - 6, e.width, 6);
-            ctx.fillRect(ex, ey, 4, e.height);
-            ctx.fillRect(ex + e.width - 4, ey, 4, e.height);
+            // Formato arredondado estilo gelatina
+            ctx.fillRect(ex + 4, drawY, slimeW - 8, slimeH);
+            ctx.fillRect(ex, drawY + 6, slimeW, slimeH - 6);
 
-            ctx.fillStyle = '#e9d5ff';
-            ctx.fillRect(ex + 6, ey - 8, 6, 8);
-            ctx.fillRect(ex + e.width - 12, ey - 8, 6, 8);
-            ctx.fillStyle = '#c084fc';
-            ctx.fillRect(ex + 8, ey - 6, 4, 6);
-            ctx.fillRect(ex + e.width - 10, ey - 6, 4, 6);
+            // Brilho da Gelatina na parte superior
+            ctx.fillStyle = '#bbf7d0';
+            ctx.fillRect(ex + 6, drawY + 2, slimeW - 12, 4);
 
-            let look = e.vx > 0 ? 4 : -2;
-            ctx.fillStyle = '#fef08a';
-            ctx.fillRect(ex + 8 + look, ey + 12, 10, 10);
-            ctx.fillRect(ex + 24 + look, ey + 12, 10, 10);
-
-            ctx.fillStyle = '#dc2626';
-            ctx.fillRect(ex + 12 + look, ey + 14, 4, 6);
-            ctx.fillRect(ex + 28 + look, ey + 14, 4, 6);
-
+            // Olhos Grandes e Fofos de Lesma
+            let eyeDir = e.vx > 0 ? 4 : -2;
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(ex + 9 + look, ey + 13, 3, 3);
-            ctx.fillRect(ex + 25 + look, ey + 13, 3, 3);
+            ctx.fillRect(ex + 8 + eyeDir, drawY + 8, 8, 10);
+            ctx.fillRect(ex + 22 + eyeDir, drawY + 8, 8, 10);
 
-            ctx.fillStyle = '#1e1b4b';
-            ctx.fillRect(ex + 10, ey + 28, e.width - 20, 8);
+            // Pupilas
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(ex + 11 + eyeDir, drawY + 11, 4, 5);
+            ctx.fillRect(ex + 25 + eyeDir, drawY + 11, 4, 5);
 
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(ex + 12, ey + 28, 4, 4);
-            ctx.fillRect(ex + 20, ey + 28, 4, 4);
-            ctx.fillRect(ex + 28, ey + 28, 4, 4);
-            ctx.fillRect(ex + 16, ey + 32, 4, 4);
-            ctx.fillRect(ex + 24, ey + 32, 4, 4);
-
-            if (e.hp === 1) {
-                ctx.fillStyle = '#dc2626';
-                ctx.fillRect(ex + 8, ey + 4, 10, 3);
-                ctx.fillRect(ex + e.width - 18, ey + 6, 12, 3);
-            }
+            // Antenas de Lesma
+            ctx.fillStyle = '#22c55e';
+            ctx.fillRect(ex + 10, drawY - 6, 4, 6);
+            ctx.fillRect(ex + 24, drawY - 6, 4, 6);
+            ctx.fillStyle = '#4ade80';
+            ctx.fillRect(ex + 9, drawY - 8, 6, 4);
+            ctx.fillRect(ex + 23, drawY - 8, 6, 4);
         }
 
         ctx.restore();
     });
 
+    // Bandeira Final
     if (flag) {
         let fx = flag.x - camera.x;
         ctx.fillStyle = '#94a3b8';
@@ -900,6 +899,7 @@ function draw() {
         ctx.fillRect(fx + flag.width, flag.y + 20, 50, 25);
     }
 
+    // Personagem
     let px = player.x - camera.x;
     let py = player.y;
 
