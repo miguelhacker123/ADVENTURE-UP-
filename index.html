@@ -290,8 +290,8 @@ function loadLevel(lvl) {
                     type: 'log'
                 });
 
-                coins.push({ x: currentX + 80, y: platY - 35, collected: false });
-                coins.push({ x: currentX + 120, y: platY - 35, collected: false });
+                coins.push({ x: currentX + 80, y: platY - 45, collected: false });
+                coins.push({ x: currentX + 120, y: platY - 45, collected: false });
             }
 
             // Inimigos Roxos
@@ -309,7 +309,7 @@ function loadLevel(lvl) {
 
             // Moedas no chão
             if (Math.random() > 0.3) {
-                coins.push({ x: currentX + landWidth / 2, y: 400, collected: false });
+                coins.push({ x: currentX + landWidth / 2, y: 390, collected: false });
             }
 
             currentX += landWidth;
@@ -406,8 +406,8 @@ function update() {
     // Coletar Moedas
     coins.forEach(c => {
         if (!c.collected && 
-            player.x < c.x + 24 && player.x + player.width > c.x &&
-            player.y < c.y + 24 && player.y + player.height > c.y) {
+            player.x < c.x + 32 && player.x + player.width > c.x &&
+            player.y < c.y + 32 && player.y + player.height > c.y) {
             c.collected = true;
             coinsCollected++;
             coinsTxt.innerText = coinsCollected;
@@ -538,18 +538,63 @@ function draw() {
         }
     });
 
-    // MOEDAS QUADRADAS DOURADAS
+    // MOEDAS MAIORES E MAIS REALISTAS (3D / METÁLICAS COM ROTAÇÃO E GLOW)
     coins.forEach(c => {
         if (!c.collected) {
-            let cx = c.x - camera.x;
-            ctx.fillStyle = '#fbbf24';
-            ctx.fillRect(cx, c.y, 20, 20);
+            let cx = c.x - camera.x + 16;
+            let cy = c.y + 16;
             
-            ctx.fillStyle = '#f59e0b';
-            ctx.fillRect(cx + 3, c.y + 3, 14, 14);
+            // Animação de rotação 3D
+            let scaleX = Math.abs(Math.sin((gameTime + c.x) * 0.05));
+            let coinW = Math.max(4, 30 * scaleX);
+            let coinH = 32;
+
+            ctx.save();
             
-            ctx.fillStyle = '#fffbeb';
-            ctx.fillRect(cx + 5, c.y + 5, 4, 4);
+            // Brilho dourado ao fundo (Glow Effect)
+            let glow = ctx.createRadialGradient(cx, cy, 2, cx, cy, 22);
+            glow.addColorStop(0, 'rgba(255, 215, 0, 0.6)');
+            glow.addColorStop(1, 'rgba(255, 215, 0, 0)');
+            ctx.fillStyle = glow;
+            ctx.fillRect(cx - 22, cy - 22, 44, 44);
+
+            // Borda Metálica Externa (Sombra/Relevo)
+            ctx.fillStyle = '#b45309';
+            ctx.fillRect(cx - coinW/2 - 1, cy - coinH/2 - 1, coinW + 2, coinH + 2);
+
+            // Camada Principal - Gradiente Metálico Realista
+            let goldGrad = ctx.createLinearGradient(cx - coinW/2, cy - coinH/2, cx + coinW/2, cy + coinH/2);
+            goldGrad.addColorStop(0, '#fef08a');
+            goldGrad.addColorStop(0.3, '#f59e0b');
+            goldGrad.addColorStop(0.7, '#d97706');
+            goldGrad.addColorStop(1, '#78350f');
+            ctx.fillStyle = goldGrad;
+            ctx.fillRect(cx - coinW/2, cy - coinH/2, coinW, coinH);
+
+            // Borda Interna Cizelada
+            if (coinW > 12) {
+                ctx.fillStyle = '#b45309';
+                ctx.fillRect(cx - coinW/2 + 3, cy - coinH/2 + 3, coinW - 6, coinH - 6);
+                
+                ctx.fillStyle = '#fbbf24';
+                ctx.fillRect(cx - coinW/2 + 4, cy - coinH/2 + 4, coinW - 8, coinH - 8);
+
+                // Símbolo $ gravado no centro
+                ctx.fillStyle = '#78350f';
+                ctx.fillRect(cx - 2, cy - 8, 4, 16);
+                ctx.fillRect(cx - 5, cy - 6, 10, 3);
+                ctx.fillRect(cx - 5, cy - 1, 10, 3);
+                ctx.fillRect(cx - 5, cy + 4, 10, 3);
+            }
+
+            // Reflexo de Luz Metálico (Flash)
+            let flashX = cx - coinW/2 + ((gameTime * 2 + c.x) % (coinW + 10)) - 5;
+            if (flashX > cx - coinW/2 && flashX < cx + coinW/2) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.fillRect(flashX, cy - coinH/2 + 2, 3, coinH - 4);
+            }
+
+            ctx.restore();
         }
     });
 
