@@ -194,6 +194,20 @@ function createSplash(x, y) {
     }
 }
 
+function createSmoke(x, y) {
+    for (let i = 0; i < 20; i++) {
+        particles.push({
+            x: x + Math.random() * 20 - 10,
+            y: y + Math.random() * 20 - 10,
+            vx: (Math.random() - 0.5) * 4,
+            vy: -Math.random() * 3 - 1,
+            size: Math.random() * 12 + 6,
+            color: Math.random() > 0.5 ? '#94a3b8' : '#cbd5e1',
+            life: 30
+        });
+    }
+}
+
 function updateParticles() {
     for (let i = particles.length - 1; i >= 0; i--) {
         let p = particles[i];
@@ -294,16 +308,18 @@ function loadLevel(lvl) {
                 coins.push({ x: currentX + 120, y: platY - 45, collected: false });
             }
 
-            // Inimigos Roxos
+            // Inimigos Roxos Detalhados (Monstros 2 HP)
             if (Math.random() < 0.3 + (lvl * 0.02)) {
                 enemies.push({
                     x: currentX + 100,
-                    y: 404,
-                    width: 36,
-                    height: 36,
+                    y: 396,
+                    width: 44,
+                    height: 44,
                     vx: (Math.random() > 0.5 ? 1 : -1) * (1.8 + lvl * 0.1),
                     minX: currentX,
-                    maxX: currentX + landWidth - 36
+                    maxX: currentX + landWidth - 44,
+                    hp: 2,
+                    flashTimer: 0
                 });
             }
 
@@ -379,24 +395,32 @@ function update() {
         takeDamage();
     }
 
-    // Inimigos Roxos
+    // Inimigos Roxos (Sistema de 2 Pulos, Piscada e Fumaça ao Morrer)
     enemies.forEach((enemy, index) => {
         enemy.x += enemy.vx;
         if (enemy.x <= enemy.minX || enemy.x >= enemy.maxX) {
             enemy.vx *= -1;
         }
 
+        if (enemy.flashTimer > 0) enemy.flashTimer--;
+
         if (player.x < enemy.x + enemy.width &&
             player.x + player.width > enemy.x &&
             player.y < enemy.y + enemy.height &&
             player.y + player.height > enemy.y) {
             
-            // Pular em cima do bixo
-            if (player.vy > 0 && player.y + player.height - player.vy <= enemy.y + 12) {
-                enemies.splice(index, 1);
+            // Pular em cima do bicho
+            if (player.vy > 0 && player.y + player.height - player.vy <= enemy.y + 16) {
                 player.vy = -player.jumpForce * 0.65;
-                coinsCollected += 3;
-                coinsTxt.innerText = coinsCollected;
+                enemy.hp--;
+                enemy.flashTimer = 18; // Tempo de piscada vermelha
+
+                if (enemy.hp <= 0) {
+                    createSmoke(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+                    enemies.splice(index, 1);
+                    coinsCollected += 3;
+                    coinsTxt.innerText = coinsCollected;
+                }
             } else {
                 takeDamage();
             }
@@ -598,29 +622,89 @@ function draw() {
         }
     });
 
-    // INIMIGOS BIXOS ROXOS
+    // INIMIGOS ROXOS REALISTAS, BONITOS E DETALHADOS (COM ANIMAÇÕES, CHIFRES, SOMBRAS E PISCADA VERMELHA)
     enemies.forEach(e => {
         let ex = e.x - camera.x;
         let ey = e.y;
+        let isFlashing = e.flashTimer > 0 && Math.floor(e.flashTimer / 3) % 2 === 0;
 
-        ctx.fillStyle = '#7e22ce';
-        ctx.fillRect(ex, ey, e.width, e.height);
+        ctx.save();
 
-        ctx.fillStyle = '#a855f7';
-        ctx.fillRect(ex + 4, ey + 4, e.width - 8, e.height - 8);
+        // Sombra suave sob o monstro
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(ex + 4, ey + e.height - 4, e.width - 8, 6);
 
-        ctx.fillStyle = '#ef4444';
-        let look = e.vx > 0 ? 4 : 0;
-        ctx.fillRect(ex + 6 + look, ey + 10, 8, 8);
-        ctx.fillRect(ex + 20 + look, ey + 10, 8, 8);
+        // Animação de respiração / passos levemente flutuante
+        let bounce = Math.sin(gameTime * 0.15) * 2;
+        ey += bounce;
 
-        ctx.fillStyle = '#fef08a';
-        ctx.fillRect(ex + 8 + look, ey + 12, 4, 4);
-        ctx.fillRect(ex + 22 + look, ey + 12, 4, 4);
+        if (isFlashing) {
+            // Estado de Dano: Piscando Vermelho brilhante
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(ex, ey, e.width, e.height);
+            ctx.fillStyle = '#f87171';
+            ctx.fillRect(ex + 4, ey + 4, e.width - 8, e.height - 8);
+        } else {
+            // Corpo Principal Gradiente Roxo / Violeta Profundo
+            let bodyGrad = ctx.createLinearGradient(ex, ey, ex + e.width, ey + e.height);
+            bodyGrad.addColorStop(0, '#a855f7');
+            bodyGrad.addColorStop(0.5, '#7e22ce');
+            bodyGrad.addColorStop(1, '#3b0764');
+            ctx.fillStyle = bodyGrad;
+            ctx.fillRect(ex, ey, e.width, e.height);
 
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(ex + 8, ey + 26, 6, 4);
-        ctx.fillRect(ex + 22, ey + 26, 6, 4);
+            // Borda Cizelada Sombreada Realista
+            ctx.fillStyle = '#581c87';
+            ctx.fillRect(ex, ey + e.height - 6, e.width, 6);
+            ctx.fillRect(ex, ey, 4, e.height);
+            ctx.fillRect(ex + e.width - 4, ey, 4, e.height);
+
+            // Chifres Demoníacos Pixelados de Cristal
+            ctx.fillStyle = '#e9d5ff';
+            ctx.fillRect(ex + 6, ey - 8, 6, 8);
+            ctx.fillRect(ex + e.width - 12, ey - 8, 6, 8);
+            ctx.fillStyle = '#c084fc';
+            ctx.fillRect(ex + 8, ey - 6, 4, 6);
+            ctx.fillRect(ex + e.width - 10, ey - 6, 4, 6);
+
+            // Olhos Ameaçadores Amarelos Brilhantes com Íris Vermelha
+            let look = e.vx > 0 ? 4 : -2;
+            ctx.fillStyle = '#fef08a';
+            ctx.fillRect(ex + 8 + look, ey + 12, 10, 10);
+            ctx.fillRect(ex + 24 + look, ey + 12, 10, 10);
+
+            // Pupila Vermelha Mau
+            ctx.fillStyle = '#dc2626';
+            ctx.fillRect(ex + 12 + look, ey + 14, 4, 6);
+            ctx.fillRect(ex + 28 + look, ey + 14, 4, 6);
+
+            // Brilho dos Olhos
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(ex + 9 + look, ey + 13, 3, 3);
+            ctx.fillRect(ex + 25 + look, ey + 13, 3, 3);
+
+            // Boca com Dentes Afiados Reais
+            ctx.fillStyle = '#1e1b4b';
+            ctx.fillRect(ex + 10, ey + 28, e.width - 20, 8);
+
+            ctx.fillStyle = '#ffffff';
+            // Dentes Superiores
+            ctx.fillRect(ex + 12, ey + 28, 4, 4);
+            ctx.fillRect(ex + 20, ey + 28, 4, 4);
+            ctx.fillRect(ex + 28, ey + 28, 4, 4);
+            // Dente Inferior
+            ctx.fillRect(ex + 16, ey + 32, 4, 4);
+            ctx.fillRect(ex + 24, ey + 32, 4, 4);
+
+            // Indicador de Vida (Mostra se falta 1 pulo com machucado visual)
+            if (e.hp === 1) {
+                ctx.fillStyle = '#dc2626';
+                ctx.fillRect(ex + 8, ey + 4, 10, 3);
+                ctx.fillRect(ex + e.width - 18, ey + 6, 12, 3);
+            }
+        }
+
+        ctx.restore();
     });
 
     // BANDEIRA DE FINALIZAÇÃO
