@@ -1,18 +1,9 @@
-Aqui está a versão atualizada e aprimorada em um **único arquivo `index.html**`.
-
-Nesta versão, adicionei **botões de controle visíveis e quadrados** (ideais tanto para jogar no teclado quanto no celular/touch), além de ter remodelado completamente os gráficos do mapa para deixá-lo **muito mais rico, detalhado e bonito**:
-
-* **Gráficos Aprimorados:** O mapa agora conta com nuvens fofas, sol com brilho dinâmico, flores na grama, ondulações animadas no rio, troncos com anéis de madeira e relevo realista nos blocos.
-* **Controles na Tela (Quadrados):** Botões estilizados **`◄` (Esquerda)**, **`►` (Direita)** e **`▲ PULAR` (Pulo)** posicionados na interface. Funcionam via clique/toque na tela e continuam respondendo ao teclado (A, D, Espaço ou Setas).
-* **20 Fases Otimizadas:** Progressão suave com visual refinado do cenário.
-
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-select=none">
-    <title>Super Adventure Deluxe - 20 Fases</title>
+    <title>Super Adventure Voxel - 20 Fases</title>
     <style>
         * {
             box-sizing: border-box;
@@ -22,9 +13,9 @@ Nesta versão, adicionei **botões de controle visíveis e quadrados** (ideais t
             -webkit-user-select: none;
         }
         body {
-            background-color: #0b0f19;
+            background-color: #050811;
             color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Courier New', Courier, monospace; /* Estilo retrô pixel */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -34,14 +25,15 @@ Nesta versão, adicionei **botões de controle visíveis e quadrados** (ideais t
         }
         #game-container {
             position: relative;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.9);
-            border-radius: 12px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.9);
+            border-radius: 4px;
             overflow: hidden;
-            border: 2px solid rgba(255,255,255,0.1);
+            border: 4px solid #1e293b;
         }
         canvas {
             display: block;
             background: #000;
+            image-rendering: pixelated; /* Deixa o visual pixel art bem nítido */
         }
         #ui {
             position: absolute;
@@ -50,25 +42,25 @@ Nesta versão, adicionei **botões de controle visíveis e quadrados** (ideais t
             right: 20px;
             display: flex;
             justify-content: space-between;
-            font-size: 18px;
-            font-weight: 800;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            font-size: 16px;
+            font-weight: 900;
+            letter-spacing: 1px;
             pointer-events: none;
             z-index: 10;
         }
         .ui-element {
-            background: rgba(15, 23, 42, 0.65);
-            padding: 8px 18px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.85);
+            padding: 8px 16px;
+            border-radius: 0px; /* Quadrado estilo minecraft */
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
         }
-        /* Botões Quadrados de Controle */
+        /* Botões de Controle 100% Quadrados */
         #controls-container {
             position: absolute;
-            bottom: 15px;
-            left: 15px;
-            right: 15px;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
@@ -77,38 +69,41 @@ Nesta versão, adicionei **botões de controle visíveis e quadrados** (ideais t
         }
         .d-pad, .jump-pad {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             pointer-events: auto;
         }
         .btn-ctrl {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0.05));
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            border-radius: 10px; /* Estilo quadrado moderno */
+            width: 64px;
+            height: 64px;
+            background: #334155;
+            border: 4px solid #cbd5e1;
+            border-radius: 0px; /* Quadrado perfeito */
             color: #fff;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: bold;
+            font-family: monospace;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.4);
-            transition: transform 0.05s, background 0.1s;
+            box-shadow: 4px 4px 0px #0f172a;
+            transition: transform 0.05s, background 0.05s;
             touch-action: manipulation;
         }
         .btn-ctrl:active, .btn-ctrl.pressed {
-            transform: scale(0.92);
-            background: rgba(255, 255, 255, 0.4);
-            border-color: #ffd700;
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #0f172a;
+            background: #64748b;
+            border-color: #f59e0b;
         }
         .btn-jump {
-            width: 100px;
-            background: linear-gradient(135deg, rgba(76, 175, 80, 0.6), rgba(56, 142, 60, 0.4));
-            border-color: rgba(129, 199, 132, 0.6);
+            width: 120px;
+            background: #15803d;
+            border-color: #86efac;
             font-size: 14px;
-            letter-spacing: 1px;
+        }
+        .btn-jump:active, .btn-jump.pressed {
+            background: #22c55e;
         }
     </style>
 </head>
@@ -116,21 +111,21 @@ Nesta versão, adicionei **botões de controle visíveis e quadrados** (ideais t
 
 <div id="game-container">
     <div id="ui">
-        <div class="ui-element">FASE: <span id="level-txt" style="color: #ffd700;">1</span>/20</div>
-        <div class="ui-element">MOEDAS: <span id="coins-txt" style="color: #ffca28;">0</span></div>
-        <div class="ui-element"><span id="lives-txt" style="color: #ff5252;">❤️ ❤️ ❤️</span></div>
+        <div class="ui-element">FASE: <span id="level-txt" style="color: #fbbf24;">1</span>/20</div>
+        <div class="ui-element">MOEDAS: <span id="coins-txt" style="color: #f59e0b;">0</span></div>
+        <div class="ui-element">VIDAS: <span id="lives-txt" style="color: #ef4444;">3</span></div>
     </div>
 
-    <canvas id="canvas" width="900" height="500"></canvas>
+    <canvas id="canvas" width="960" height="540"></canvas>
 
-    <!-- Botões Quadrados na Tela -->
+    <!-- Botões Totalmente Quadrados -->
     <div id="controls-container">
         <div class="d-pad">
-            <div class="btn-ctrl" id="btn-left">◄</div>
-            <div class="btn-ctrl" id="btn-right">►</div>
+            <div class="btn-ctrl" id="btn-left">&lt;</div>
+            <div class="btn-ctrl" id="btn-right">&gt;</div>
         </div>
         <div class="jump-pad">
-            <div class="btn-ctrl btn-jump" id="btn-jump">▲ PULAR</div>
+            <div class="btn-ctrl btn-jump" id="btn-jump">PULAR</div>
         </div>
     </div>
 </div>
@@ -139,12 +134,10 @@ Nesta versão, adicionei **botões de controle visíveis e quadrados** (ideais t
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-// UI Elements
 const levelTxt = document.getElementById('level-txt');
 const coinsTxt = document.getElementById('coins-txt');
 const livesTxt = document.getElementById('lives-txt');
 
-// Game Engine State
 let currentLevel = 1;
 const maxLevels = 20;
 let coinsCollected = 0;
@@ -153,14 +146,12 @@ let gameOver = false;
 let gameWon = false;
 let gameTime = 0;
 
-// Inputs
 const keys = {};
 const touchControls = { left: false, right: false, jump: false };
 
 window.addEventListener('keydown', e => keys[e.code] = true);
 window.addEventListener('keyup', e => keys[e.code] = false);
 
-// Eventos para Botões de Toque/Clique Quadrados
 function setupBtn(id, controlProp) {
     const btn = document.getElementById(id);
     const start = (e) => { e.preventDefault(); touchControls[controlProp] = true; btn.classList.add('pressed'); };
@@ -176,44 +167,31 @@ setupBtn('btn-left', 'left');
 setupBtn('btn-right', 'right');
 setupBtn('btn-jump', 'jump');
 
-// Camera System
 const camera = { x: 0, y: 0 };
 
-// Dynamic Clouds & Environment
+// Nuvens Quadradas Estilo Minecraft
 let clouds = [];
-for(let i=0; i<10; i++) {
+for(let i=0; i<12; i++) {
     clouds.push({
-        x: Math.random() * 3000,
-        y: Math.random() * 150 + 20,
-        size: Math.random() * 30 + 30,
-        speed: Math.random() * 0.3 + 0.1
+        x: Math.random() * 4000,
+        y: Math.random() * 120 + 20,
+        w: Math.random() * 80 + 60,
+        h: Math.random() * 20 + 20,
+        speed: Math.random() * 0.4 + 0.2
     });
 }
 
-// Particle System
+// Partículas
 let particles = [];
-function createWaterSplash(x, y) {
-    for (let i = 0; i < 20; i++) {
+function createSplash(x, y) {
+    for (let i = 0; i < 15; i++) {
         particles.push({
             x: x, y: y,
-            vx: (Math.random() - 0.5) * 8,
-            vy: -Math.random() * 6 - 3,
-            size: Math.random() * 5 + 2,
-            color: '#80deea',
-            life: 35
-        });
-    }
-}
-
-function createDust(x, y) {
-    for (let i = 0; i < 6; i++) {
-        particles.push({
-            x: x, y: y,
-            vx: (Math.random() - 0.5) * 3,
-            vy: -Math.random() * 2,
-            size: Math.random() * 4 + 1,
-            color: '#d7ccc8',
-            life: 20
+            vx: (Math.random() - 0.5) * 6,
+            vy: -Math.random() * 5 - 2,
+            size: Math.random() * 6 + 2,
+            color: '#38bdf8',
+            life: 25
         });
     }
 }
@@ -231,25 +209,21 @@ function updateParticles() {
 function drawParticles() {
     particles.forEach(p => {
         ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.life / 35;
-        ctx.beginPath();
-        ctx.arc(p.x - camera.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillRect(p.x - camera.x, p.y, p.size, p.size); // Partículas quadradas
     });
-    ctx.globalAlpha = 1.0;
 }
 
-// Player Object
+// Jogador
 const player = {
-    x: 50,
-    y: 300,
+    x: 80,
+    y: 100,
     width: 32,
     height: 48,
     vx: 0,
     vy: 0,
-    speed: 5.5,
-    jumpForce: 13,
-    gravity: 0.55,
+    speed: 6,
+    jumpForce: 13.5,
+    gravity: 0.6,
     grounded: false,
     facing: 'right',
     reset: function() {
@@ -260,110 +234,102 @@ const player = {
     }
 };
 
-// World Objects
 let platforms = [];
 let waterZones = [];
 let coins = [];
 let enemies = [];
-let decorationDetails = [];
 let flag = null;
 
-// LEVEL GENERATOR - 20 Detalhar Fases
+const BLOCK_SIZE = 40;
+
+// GERAÇÃO DE NÍVEIS
 function loadLevel(lvl) {
     platforms = [];
     waterZones = [];
     coins = [];
     enemies = [];
-    decorationDetails = [];
     player.reset();
 
-    const worldWidth = 2600 + lvl * 350;
+    const worldWidth = 3000 + lvl * 400;
     let currentX = 0;
-    
-    // Starting platform
-    platforms.push({ x: 0, y: 400, width: 450, height: 120, type: 'grass' });
-    currentX = 450;
+
+    // Plataforma inicial segura
+    platforms.push({ x: 0, y: 440, width: 480, height: 100, type: 'dirt' });
+    currentX = 480;
 
     while (currentX < worldWidth - 500) {
-        let choice = Math.random();
-        
-        // Water/River Generation
-        if (choice < 0.35) {
-            let waterWidth = 160 + Math.random() * 160;
-            waterZones.push({ x: currentX, y: 420, width: waterWidth, height: 100 });
-            
-            // Wooden Logs over water
-            let logsCount = Math.floor(waterWidth / 75);
-            for (let i = 0; i < logsCount; i++) {
+        let rand = Math.random();
+
+        // Rio / Água
+        if (rand < 0.35) {
+            let riverWidth = 160 + Math.random() * 160;
+            waterZones.push({ x: currentX, y: 460, width: riverWidth, height: 80 });
+
+            // Troncos estilo Minecraft sobre o rio
+            let logs = Math.floor(riverWidth / 80);
+            for (let i = 0; i < logs; i++) {
                 platforms.push({
-                    x: currentX + 25 + (i * 70),
-                    y: 320 - (Math.random() * 30),
-                    width: 55,
-                    height: 22,
-                    type: 'wood'
+                    x: currentX + 30 + (i * 75),
+                    y: 350 - (Math.random() * 40),
+                    width: 60,
+                    height: 24,
+                    type: 'log'
                 });
             }
-            currentX += waterWidth;
+            currentX += riverWidth;
         } 
-        // Land Platform
+        // Terra Minecraft
         else {
-            let landWidth = 220 + Math.random() * 320;
-            platforms.push({ x: currentX, y: 400, width: landWidth, height: 120, type: 'grass' });
+            let landWidth = 240 + Math.random() * 320;
+            platforms.push({ x: currentX, y: 440, width: landWidth, height: 100, type: 'dirt' });
 
-            // Decorative flowers/grass details
-            for (let d = 10; d < landWidth - 20; d += 40 + Math.random() * 40) {
-                decorationDetails.push({ x: currentX + d, y: 400, type: Math.random() > 0.5 ? 'flower' : 'bush' });
-            }
-
-            // High Floating Platforms
-            if (Math.random() > 0.35) {
-                let platY = 270 - Math.random() * 40;
+            // Plataformas Voadoras de Tronco
+            if (Math.random() > 0.4) {
+                let platY = 300 - Math.random() * 50;
                 platforms.push({
                     x: currentX + 60,
                     y: platY,
-                    width: 110,
-                    height: 22,
-                    type: 'wood'
+                    width: 100,
+                    height: 24,
+                    type: 'log'
                 });
-                
-                // Coins on platform
-                coins.push({ x: currentX + 100, y: platY - 30, collected: false });
-                coins.push({ x: currentX + 125, y: platY - 30, collected: false });
+
+                coins.push({ x: currentX + 80, y: platY - 35, collected: false });
+                coins.push({ x: currentX + 120, y: platY - 35, collected: false });
             }
 
-            // Spawn Enemies
-            if (Math.random() < 0.25 + (lvl * 0.03)) {
+            // Inimigos Roxos
+            if (Math.random() < 0.3 + (lvl * 0.02)) {
                 enemies.push({
-                    x: currentX + 120,
-                    y: 368,
-                    width: 32,
-                    height: 32,
-                    vx: (Math.random() > 0.5 ? 1 : -1) * (1.6 + lvl * 0.12),
+                    x: currentX + 100,
+                    y: 404,
+                    width: 36,
+                    height: 36,
+                    vx: (Math.random() > 0.5 ? 1 : -1) * (1.8 + lvl * 0.1),
                     minX: currentX,
-                    maxX: currentX + landWidth - 32
+                    maxX: currentX + landWidth - 36
                 });
             }
 
-            // Ground Coins
-            if (Math.random() > 0.4) {
-                coins.push({ x: currentX + landWidth / 2, y: 360, collected: false });
+            // Moedas no chão
+            if (Math.random() > 0.3) {
+                coins.push({ x: currentX + landWidth / 2, y: 400, collected: false });
             }
 
             currentX += landWidth;
         }
     }
 
-    // End Goal (Flag)
-    platforms.push({ x: currentX, y: 400, width: 500, height: 120, type: 'grass' });
-    flag = { x: currentX + 220, y: 230, width: 20, height: 170 };
+    // Plataforma Final e Bandeira
+    platforms.push({ x: currentX, y: 440, width: 600, height: 100, type: 'dirt' });
+    flag = { x: currentX + 250, y: 260, width: 24, height: 180 };
 }
 
-// UPDATE
+// ATUALIZAÇÃO DO JOGO
 function update() {
     if (gameOver || gameWon) return;
     gameTime++;
 
-    // Input Movement
     const moveLeft = keys['KeyA'] || keys['ArrowLeft'] || touchControls.left;
     const moveRight = keys['KeyD'] || keys['ArrowRight'] || touchControls.right;
     const moveJump = keys['KeyW'] || keys['Space'] || keys['ArrowUp'] || touchControls.jump;
@@ -375,32 +341,27 @@ function update() {
         player.vx = player.speed;
         player.facing = 'right';
     } else {
-        player.vx *= 0.78; // Friction
+        player.vx *= 0.75;
     }
 
-    // Jump
     if (moveJump && player.grounded) {
         player.vy = -player.jumpForce;
         player.grounded = false;
-        createDust(player.x + player.width / 2, player.y + player.height);
     }
 
-    // Gravity
     player.vy += player.gravity;
-
-    // Apply Position
     player.x += player.vx;
     player.y += player.vy;
 
     if (player.x < 0) player.x = 0;
 
-    // Platform Collisions
+    // Colisão com Plataformas
     player.grounded = false;
     platforms.forEach(p => {
         if (player.x < p.x + p.width &&
             player.x + player.width > p.x &&
             player.y + player.height > p.y &&
-            player.y + player.height < p.y + p.height + player.vy + 2) {
+            player.y + player.height < p.y + p.height + player.vy + 4) {
             
             if (player.vy > 0) {
                 player.grounded = true;
@@ -410,20 +371,19 @@ function update() {
         }
     });
 
-    // Water Collision
+    // Colisão com Água
     waterZones.forEach(w => {
-        if (player.x + player.width > w.x && player.x < w.x + w.width && player.y + player.height > w.y + 25) {
-            createWaterSplash(player.x + player.width / 2, player.y + player.height);
+        if (player.x + player.width > w.x && player.x < w.x + w.width && player.y + player.height > w.y + 20) {
+            createSplash(player.x + player.width / 2, player.y + player.height);
             takeDamage();
         }
     });
 
-    // Pit Fall
-    if (player.y > canvas.height + 80) {
+    if (player.y > canvas.height + 100) {
         takeDamage();
     }
 
-    // Enemy Patrol & Collision
+    // Inimigos Roxos
     enemies.forEach((enemy, index) => {
         enemy.x += enemy.vx;
         if (enemy.x <= enemy.minX || enemy.x >= enemy.maxX) {
@@ -435,11 +395,11 @@ function update() {
             player.y < enemy.y + enemy.height &&
             player.y + player.height > enemy.y) {
             
-            // Defeat Enemy from top
+            // Pular em cima do bixo
             if (player.vy > 0 && player.y + player.height - player.vy <= enemy.y + 12) {
                 enemies.splice(index, 1);
                 player.vy = -player.jumpForce * 0.65;
-                coinsCollected += 2;
+                coinsCollected += 3;
                 coinsTxt.innerText = coinsCollected;
             } else {
                 takeDamage();
@@ -447,18 +407,18 @@ function update() {
         }
     });
 
-    // Coins Collect
+    // Coletar Moedas
     coins.forEach(c => {
         if (!c.collected && 
-            player.x < c.x + 20 && player.x + player.width > c.x &&
-            player.y < c.y + 20 && player.y + player.height > c.y) {
+            player.x < c.x + 24 && player.x + player.width > c.x &&
+            player.y < c.y + 24 && player.y + player.height > c.y) {
             c.collected = true;
             coinsCollected++;
             coinsTxt.innerText = coinsCollected;
         }
     });
 
-    // Goal Flag Collision
+    // Final da Fase
     if (flag && player.x < flag.x + flag.width && player.x + player.width > flag.x &&
         player.y < flag.y + flag.height && player.y + player.height > flag.y) {
         if (currentLevel < maxLevels) {
@@ -470,13 +430,11 @@ function update() {
         }
     }
 
-    // Camera follow
     camera.x += (player.x - canvas.width / 3 - camera.x) * 0.1;
 
-    // Move clouds slowly
     clouds.forEach(c => {
         c.x += c.speed;
-        if (c.x > 3500) c.x = -100;
+        if (c.x > 4500) c.x = -100;
     });
 
     updateParticles();
@@ -484,7 +442,7 @@ function update() {
 
 function takeDamage() {
     lives--;
-    livesTxt.innerText = '❤️ '.repeat(Math.max(0, lives));
+    livesTxt.innerText = lives;
     if (lives <= 0) {
         gameOver = true;
     } else {
@@ -492,281 +450,239 @@ function takeDamage() {
     }
 }
 
-// DRAW / RENDERER
+// DESENHO / GRÁFICOS
 function draw() {
-    // Dynamic Vivid Sky Gradient
+    // Céu azul estilo pixel
     let skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    skyGradient.addColorStop(0, '#0d47a1');
-    skyGradient.addColorStop(0.5, '#1976d2');
-    skyGradient.addColorStop(1, '#80deea');
+    skyGradient.addColorStop(0, '#0284c7');
+    skyGradient.addColorStop(1, '#38bdf8');
     ctx.fillStyle = skyGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Glowing Sun
-    ctx.save();
-    let sunX = 750 - camera.x * 0.03;
-    let sunGrad = ctx.createRadialGradient(sunX, 80, 10, sunX, 80, 70);
-    sunGrad.addColorStop(0, '#fffde7');
-    sunGrad.addColorStop(0.3, '#fff59d');
-    sunGrad.addColorStop(1, 'rgba(255, 235, 59, 0)');
-    ctx.fillStyle = sunGrad;
-    ctx.beginPath();
-    ctx.arc(sunX, 80, 70, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+    // Sol Quadrado estilo Minecraft
+    let sunX = 800 - camera.x * 0.04;
+    ctx.fillStyle = '#fef08a';
+    ctx.fillRect(sunX, 40, 60, 60);
+    ctx.fillStyle = '#fde047';
+    ctx.fillRect(sunX + 6, 46, 48, 48);
 
-    // Clouds
+    // Nuvens Quadradas
     clouds.forEach(c => {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
         let cx = c.x - camera.x * 0.15;
-        ctx.beginPath();
-        ctx.arc(cx, c.y, c.size, 0, Math.PI * 2);
-        ctx.arc(cx + c.size * 0.6, c.y - c.size * 0.2, c.size * 0.7, 0, Math.PI * 2);
-        ctx.arc(cx + c.size * 1.2, c.y, c.size * 0.8, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.fillRect(cx, c.y, c.w, c.h);
+        ctx.fillRect(cx + 15, c.y - 12, c.w - 30, 12);
     });
-
-    // Parallax Mountains
-    ctx.fillStyle = '#1b5e20';
-    ctx.beginPath();
-    ctx.moveTo(-100 - camera.x * 0.2, 420);
-    ctx.lineTo(200 - camera.x * 0.2, 220);
-    ctx.lineTo(500 - camera.x * 0.2, 420);
-    ctx.lineTo(850 - camera.x * 0.2, 170);
-    ctx.lineTo(1200 - camera.x * 0.2, 420);
-    ctx.fill();
 
     ctx.save();
 
-    // Render Water / Rivers (With Animated Waves)
-    waterZones.forEach(w => {
-        let waterGrad = ctx.createLinearGradient(0, w.y, 0, w.y + w.height);
-        waterGrad.addColorStop(0, '#0288d1');
-        waterGrad.addColorStop(1, '#004ecb');
-        ctx.fillStyle = waterGrad;
-        ctx.fillRect(w.x - camera.x, w.y, w.width, w.height);
-
-        // Animated wave highlights
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        for (let waveX = 0; waveX < w.width; waveX += 20) {
-            let waveY = w.y + Math.sin((gameTime * 0.08) + waveX) * 3 + 4;
-            ctx.fillRect(w.x - camera.x + waveX, waveY, 12, 2);
-        }
-    });
-
-    // Render Platforms (Grass & Wood)
+    // DESENHAR BLOCOS DE TERRA MINECRAFT
     platforms.forEach(p => {
-        if (p.type === 'grass') {
-            // Earth Block
-            let earthGrad = ctx.createLinearGradient(0, p.y + 15, 0, p.y + p.height);
-            earthGrad.addColorStop(0, '#6d4c41');
-            earthGrad.addColorStop(1, '#3e2723');
-            ctx.fillStyle = earthGrad;
-            ctx.fillRect(p.x - camera.x, p.y + 12, p.width, p.height - 12);
+        let px = p.x - camera.x;
+        
+        if (p.type === 'dirt') {
+            // Corpo da Terra (Marrom Pixelado)
+            ctx.fillStyle = '#57331c';
+            ctx.fillRect(px, p.y, p.width, p.height);
 
-            // Soil pattern details
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-            for (let px = 10; px < p.width - 10; px += 25) {
-                ctx.fillRect(p.x - camera.x + px, p.y + 25, 8, 8);
+            // Textura interna da terra (Quadrados escuros)
+            ctx.fillStyle = '#3d2314';
+            for (let bx = 0; bx < p.width; bx += 16) {
+                for (let by = 16; by < p.height; by += 16) {
+                    if ((bx + by) % 32 === 0) {
+                        ctx.fillRect(px + bx, p.y + by, 8, 8);
+                    }
+                }
             }
 
-            // Top Grass Layer
-            let grassGrad = ctx.createLinearGradient(0, p.y, 0, p.y + 14);
-            grassGrad.addColorStop(0, '#66bb6a');
-            grassGrad.addColorStop(1, '#2e7d32');
-            ctx.fillStyle = grassGrad;
-            ctx.fillRect(p.x - camera.x, p.y, p.width, 14);
+            // Camada de Grama Superior (Verde Minecraft)
+            ctx.fillStyle = '#4ade80';
+            ctx.fillRect(px, p.y, p.width, 14);
 
-            // Grass Edge Tufts
-            ctx.fillStyle = '#81c784';
-            for (let g = 0; g < p.width; g += 6) {
-                ctx.fillRect(p.x - camera.x + g, p.y - 3, 3, 4);
+            // Bloco de Grama Densa
+            ctx.fillStyle = '#16a34a';
+            ctx.fillRect(px, p.y + 10, p.width, 4);
+
+            // Detalhes de grama caindo sobre a terra
+            ctx.fillStyle = '#22c55e';
+            for (let g = 0; g < p.width; g += 16) {
+                ctx.fillRect(px + g, p.y + 14, 8, 6);
+                ctx.fillRect(px + g + 8, p.y + 14, 4, 3);
             }
-        } else if (p.type === 'wood') {
-            // Detailed Wood Trunk Platform
-            let woodGrad = ctx.createLinearGradient(0, p.y, 0, p.y + p.height);
-            woodGrad.addColorStop(0, '#8d6e63');
-            woodGrad.addColorStop(0.5, '#5d4037');
-            woodGrad.addColorStop(1, '#3e2723');
+        } 
+        // TRONCOS ESTILO MINECRAFT
+        else if (p.type === 'log') {
+            // Tronco base
+            ctx.fillStyle = '#78350f';
+            ctx.fillRect(px, p.y, p.width, p.height);
 
-            ctx.fillStyle = woodGrad;
-            ctx.fillRect(p.x - camera.x, p.y, p.width, p.height);
-
-            // Bark lines & end circles
-            ctx.strokeStyle = '#271c19';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(p.x - camera.x, p.y, p.width, p.height);
-
-            // Wood Rings
-            ctx.fillStyle = '#a1887f';
-            ctx.beginPath();
-            ctx.arc(p.x - camera.x + 6, p.y + p.height/2, 5, 0, Math.PI * 2);
-            ctx.arc(p.x - camera.x + p.width - 6, p.y + p.height/2, 5, 0, Math.PI * 2);
-            ctx.fill();
+            // Casca do tronco (Linhas pixel)
+            ctx.fillStyle = '#451a03';
+            ctx.fillRect(px, p.y, p.width, 4);
+            ctx.fillRect(px, p.y + p.height - 4, p.width, 4);
+            
+            // Textura da madeira
+            ctx.fillStyle = '#92400e';
+            for (let lx = 10; lx < p.width; lx += 20) {
+                ctx.fillRect(px + lx, p.y + 6, 12, p.height - 12);
+            }
         }
     });
 
-    // Render Flowers/Bushes Details
-    decorationDetails.forEach(d => {
-        let dx = d.x - camera.x;
-        if (d.type === 'flower') {
-            ctx.fillStyle = '#e91e63';
-            ctx.beginPath();
-            ctx.arc(dx, d.y - 6, 4, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#ffeb3b';
-            ctx.beginPath();
-            ctx.arc(dx, d.y - 6, 1.5, 0, Math.PI * 2);
-            ctx.fill();
+    // RIO / ÁGUA REALISTA COM ONDAS
+    waterZones.forEach(w => {
+        let wx = w.x - camera.x;
+        
+        // Água Transparente em Camadas
+        ctx.fillStyle = 'rgba(14, 165, 233, 0.75)';
+        ctx.fillRect(wx, w.y, w.width, w.height);
+
+        // Fundo do Rio
+        ctx.fillStyle = '#0369a1';
+        ctx.fillRect(wx, w.y + 20, w.width, w.height - 20);
+
+        // Espuma / Onda em cima da água (Movimento Pixel)
+        ctx.fillStyle = '#e0f2fe';
+        for (let waveX = 0; waveX < w.width; waveX += 16) {
+            let offset = (Math.sin((gameTime * 0.1) + waveX) > 0) ? 0 : 3;
+            ctx.fillRect(wx + waveX, w.y + offset, 12, 4);
         }
     });
 
-    // Render Coins (Spinning & Glowing)
+    // MOEDAS QUADRADAS DOURADAS
     coins.forEach(c => {
         if (!c.collected) {
             let cx = c.x - camera.x;
-            ctx.fillStyle = '#ffd54f';
-            ctx.beginPath();
-            ctx.arc(cx, c.y, 9, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Coin inner shine
-            ctx.fillStyle = '#fff8e1';
-            ctx.beginPath();
-            ctx.arc(cx - 2, c.y - 2, 3, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.strokeStyle = '#ff8f00';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
+            ctx.fillStyle = '#fbbf24';
+            ctx.fillRect(cx, c.y, 20, 20);
+            
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(cx + 3, c.y + 3, 14, 14);
+            
+            ctx.fillStyle = '#fffbeb';
+            ctx.fillRect(cx + 5, c.y + 5, 4, 4);
         }
     });
 
-    // Render Enemies ("Bixos")
+    // INIMIGOS BIXOS ROXOS
     enemies.forEach(e => {
         let ex = e.x - camera.x;
         let ey = e.y;
 
-        // Enemy Gradient Body
-        let enemyGrad = ctx.createRadialGradient(ex + 16, ey + 16, 3, ex + 16, ey + 16, 16);
-        enemyGrad.addColorStop(0, '#ff5252');
-        enemyGrad.addColorStop(1, '#b71c1c');
+        // Corpo Roxo Voxel
+        ctx.fillStyle = '#7e22ce'; // Roxo Escuro
+        ctx.fillRect(ex, ey, e.width, e.height);
 
-        ctx.fillStyle = enemyGrad;
-        ctx.beginPath();
-        ctx.arc(ex + 16, ey + 16, 16, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = '#a855f7'; // Roxo Claro / Destaque
+        ctx.fillRect(ex + 4, ey + 4, e.width - 8, e.height - 8);
 
-        // Eyes
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(ex + 10, ey + 12, 4.5, 0, Math.PI * 2);
-        ctx.arc(ex + 22, ey + 12, 4.5, 0, Math.PI * 2);
-        ctx.fill();
+        // Olhos Vermelhos Ameaçadores
+        ctx.fillStyle = '#ef4444';
+        let look = e.vx > 0 ? 4 : 0;
+        ctx.fillRect(ex + 6 + look, ey + 10, 8, 8);
+        ctx.fillRect(ex + 20 + look, ey + 10, 8, 8);
 
-        // Pupils looking at direction
-        ctx.fillStyle = '#000';
-        let pOffset = e.vx > 0 ? 1.5 : -1.5;
-        ctx.beginPath();
-        ctx.arc(ex + 10 + pOffset, ey + 12, 2, 0, Math.PI * 2);
-        ctx.arc(ex + 22 + pOffset, ey + 12, 2, 0, Math.PI * 2);
-        ctx.fill();
+        // Pupila Amarela
+        ctx.fillStyle = '#fef08a';
+        ctx.fillRect(ex + 8 + look, ey + 12, 4, 4);
+        ctx.fillRect(ex + 22 + look, ey + 12, 4, 4);
+
+        // Dentes Quadrados
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(ex + 8, ey + 26, 6, 4);
+        ctx.fillRect(ex + 22, ey + 26, 6, 4);
     });
 
-    // Goal Flag
+    // BANDEIRA DE FINALIZAÇÃO
     if (flag) {
         let fx = flag.x - camera.x;
-        // Pole
-        ctx.fillStyle = '#cfd8dc';
+        // Poste Pixel
+        ctx.fillStyle = '#94a3b8';
         ctx.fillRect(fx, flag.y, flag.width, flag.height);
-        ctx.fillStyle = '#ffd700';
-        ctx.beginPath();
-        ctx.arc(fx + 10, flag.y, 10, 0, Math.PI * 2);
-        ctx.fill();
+        
+        // Topo do poste
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(fx - 4, flag.y - 8, 32, 10);
 
-        // Animated Flag Wave
-        let wave = Math.sin(gameTime * 0.1) * 5;
-        ctx.fillStyle = '#f44336';
-        ctx.beginPath();
-        ctx.moveTo(fx + flag.width, flag.y + 10);
-        ctx.lineTo(fx + flag.width + 55, flag.y + 30 + wave);
-        ctx.lineTo(fx + flag.width, flag.y + 55);
-        ctx.fill();
+        // Pano da Bandeira (Vermelho)
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(fx + flag.width, flag.y + 10, 60, 45);
+        ctx.fillStyle = '#b91c1c';
+        ctx.fillRect(fx + flag.width, flag.y + 20, 50, 25);
     }
 
-    // Render Player (Mario Inspired)
+    // JOGADOR (Estilo Pixel Art)
     let px = player.x - camera.x;
     let py = player.y;
 
-    // Pants
-    ctx.fillStyle = '#1565c0';
-    ctx.fillRect(px + 4, py + 24, player.width - 8, 20);
+    // Chapéu Vermelho
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(px + 4, py, 24, 8);
+    ctx.fillRect(px + (player.facing === 'right' ? 8 : 0), py + 4, 24, 4);
 
-    // Shirt & Cap
-    ctx.fillStyle = '#d32f2f';
-    ctx.fillRect(px + 4, py + 12, player.width - 8, 12);
-    ctx.fillRect(px + 2, py + 2, player.width - 4, 8); // Cap
+    // Rosto
+    ctx.fillStyle = '#fde047';
+    ctx.fillRect(px + 6, py + 8, 20, 10);
 
-    // Skin Face
-    ctx.fillStyle = '#ffcc80';
-    ctx.fillRect(px + 6, py + 8, player.width - 12, 8);
+    // Olhos Pixel
+    ctx.fillStyle = '#000';
+    let eyeX = player.facing === 'right' ? 18 : 8;
+    ctx.fillRect(px + eyeX, py + 10, 4, 4);
 
-    // Mustache & Eye
-    ctx.fillStyle = '#3e2723';
-    let eyeDir = player.facing === 'right' ? 4 : -4;
-    ctx.fillRect(px + 14 + eyeDir, py + 9, 3, 3);
-    ctx.fillRect(px + 8 + eyeDir, py + 13, 12, 3);
+    // Camisa Vermelha
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(px + 4, py + 18, 24, 12);
 
-    // Shoes
-    ctx.fillStyle = '#4e342e';
-    ctx.fillRect(px + 2, py + 42, 12, 6);
-    ctx.fillRect(px + 18, py + 42, 12, 6);
+    // Macacão Azul
+    ctx.fillStyle = '#2563eb';
+    ctx.fillRect(px + 6, py + 26, 20, 14);
 
-    // Particles
+    // Sapato Quadrado
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(px + 2, py + 40, 12, 8);
+    ctx.fillRect(px + 18, py + 40, 12, 8);
+
     drawParticles();
 
     ctx.restore();
 
-    // Game Over Overlay
+    // GAME OVER OVERLAY
     if (gameOver) {
-        ctx.fillStyle = 'rgba(10, 10, 15, 0.88)';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#ff5252';
-        ctx.font = '900 46px sans-serif';
+        ctx.fillStyle = '#ef4444';
+        ctx.font = '900 40px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('FIM DE JOGO', canvas.width / 2, canvas.height / 2 - 20);
+        ctx.fillText('VOCE MORREU!', canvas.width / 2, canvas.height / 2 - 20);
         ctx.fillStyle = '#fff';
-        ctx.font = '18px sans-serif';
-        ctx.fillText('Recarregue a página para Tentar Novamente', canvas.width / 2, canvas.height / 2 + 30);
+        ctx.font = '16px monospace';
+        ctx.fillText('RECARREGUE A PAGINA PARA RECOMEÇAR', canvas.width / 2, canvas.height / 2 + 30);
     }
 
-    // Victory Overlay
+    // VITÓRIA OVERLAY
     if (gameWon) {
-        ctx.fillStyle = 'rgba(10, 10, 15, 0.88)';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#ffd700';
-        ctx.font = '900 46px sans-serif';
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = '900 40px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('VOCÊ VENCEU AS 20 FASES!', canvas.width / 2, canvas.height / 2 - 20);
+        ctx.fillText('PARABENS! JOGO ZERADO!', canvas.width / 2, canvas.height / 2 - 20);
         ctx.fillStyle = '#fff';
-        ctx.font = '20px sans-serif';
-        ctx.fillText(`Total de Moedas Coletadas: ${coinsCollected}`, canvas.width / 2, canvas.height / 2 + 30);
+        ctx.font = '16px monospace';
+        ctx.fillText(`MOEDAS COLETADAS: ${coinsCollected}`, canvas.width / 2, canvas.height / 2 + 30);
     }
 }
 
-// MAIN LOOP
+// LOOP PRINCIPAL
 function gameLoop() {
     update();
     draw();
     requestAnimationFrame(gameLoop);
 }
 
-// Initialize Level 1
 loadLevel(1);
 gameLoop();
 
 </script>
 </body>
 </html>
-
-```
