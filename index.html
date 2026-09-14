@@ -372,7 +372,7 @@ const camera = { x: 0, y: 0 };
 let clouds = [];
 for(let i=0; i<12; i++) {
     clouds.push({
-        x: Math.random() * 4000,
+        x: Math.random() * 8000,
         y: Math.random() * 120 + 20,
         w: Math.random() * 80 + 60,
         h: Math.random() * 20 + 20,
@@ -426,7 +426,7 @@ function drawParticles() {
     });
 }
 
-// Jogador
+// Jogador (Velocidade reduzida para 4.2)
 const player = {
     x: 80,
     y: 100,
@@ -434,7 +434,7 @@ const player = {
     height: 48,
     vx: 0,
     vy: 0,
-    speed: 6,
+    speed: 4.2,
     jumpForce: 13.5,
     gravity: 0.6,
     grounded: false,
@@ -453,7 +453,7 @@ let coins = [];
 let enemies = [];
 let flag = null;
 
-// GERAÇÃO DE NÍVEIS
+// GERAÇÃO DE NÍVEIS (Fases significativamente mais longas)
 function loadLevel(lvl) {
     platforms = [];
     waterZones = [];
@@ -461,7 +461,7 @@ function loadLevel(lvl) {
     enemies = [];
     player.reset();
 
-    const worldWidth = 3000 + lvl * 400;
+    const worldWidth = 6000 + lvl * 800;
     let currentX = 0;
 
     // Plataforma inicial segura
@@ -654,7 +654,7 @@ function update() {
 
     clouds.forEach(c => {
         c.x += c.speed;
-        if (c.x > 4500) c.x = -100;
+        if (c.x > 8500) c.x = -100;
     });
 
     updateParticles();
