@@ -42,6 +42,7 @@
             right: 20px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
             font-size: 16px;
             font-weight: 900;
             letter-spacing: 1px;
@@ -55,6 +56,97 @@
             border: 2px solid rgba(255, 255, 255, 0.2);
             box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
         }
+        
+        /* Botão de Pause no Topo Centro */
+        #btn-pause-top {
+            pointer-events: auto;
+            background: #eab308;
+            color: #000;
+            border: 3px solid #fef08a;
+            padding: 6px 16px;
+            font-size: 14px;
+            font-weight: 900;
+            font-family: monospace;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px #0f172a;
+        }
+        #btn-pause-top:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px #0f172a;
+        }
+
+        /* Modais / Menus Overlays */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 30;
+        }
+        .modal-title {
+            font-size: 48px;
+            font-weight: 900;
+            color: #f59e0b;
+            text-shadow: 4px 4px 0px #000;
+            margin-bottom: 25px;
+            letter-spacing: 3px;
+        }
+        .menu-btn {
+            width: 220px;
+            padding: 14px 0;
+            margin: 8px 0;
+            background: #2563eb;
+            color: #fff;
+            border: 4px solid #93c5fd;
+            font-size: 18px;
+            font-weight: 900;
+            font-family: monospace;
+            cursor: pointer;
+            box-shadow: 4px 4px 0px #000;
+            text-align: center;
+        }
+        .menu-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #000;
+            background: #3b82f6;
+        }
+
+        /* Grade de Seleção de Fases */
+        #levels-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            max-width: 400px;
+            margin-bottom: 15px;
+        }
+        .lvl-btn {
+            width: 55px;
+            height: 55px;
+            background: #334155;
+            color: #fff;
+            border: 3px solid #cbd5e1;
+            font-size: 18px;
+            font-weight: bold;
+            font-family: monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px #000;
+        }
+        .lvl-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px #000;
+            background: #eab308;
+            color: #000;
+        }
+
         /* Botões de Controle 100% Quadrados */
         #controls-container {
             position: absolute;
@@ -112,7 +204,30 @@
 <div id="game-container">
     <div id="ui">
         <div class="ui-element">MOEDAS: <span id="coins-txt" style="color: #f59e0b;">0</span></div>
+        <button id="btn-pause-top">PAUSE</button>
         <div class="ui-element">VIDAS: <span id="lives-txt" style="color: #ef4444;">3</span></div>
+    </div>
+
+    <!-- Menu Principal -->
+    <div id="main-menu" class="modal-overlay">
+        <div class="modal-title">ADVENTURES</div>
+        <button class="menu-btn" id="btn-play">PLAY</button>
+        <button class="menu-btn" id="btn-fases-menu">FASES</button>
+    </div>
+
+    <!-- Menu de Pause -->
+    <div id="pause-menu" class="modal-overlay" style="display: none;">
+        <div class="modal-title">PAUSADO</div>
+        <button class="menu-btn" id="btn-resume">CONTINUAR</button>
+        <button class="menu-btn" id="btn-retry">RETRY</button>
+        <button class="menu-btn" id="btn-menu-back">MENU</button>
+    </div>
+
+    <!-- Menu de Fases -->
+    <div id="levels-menu" class="modal-overlay" style="display: none;">
+        <div class="modal-title" style="font-size: 32px;">SELECIONE A FASE</div>
+        <div id="levels-grid"></div>
+        <button class="menu-btn" id="btn-back-main" style="width: 150px; padding: 8px 0; font-size: 14px; margin-top: 15px;">VOLTAR</button>
     </div>
 
     <canvas id="canvas" width="960" height="540"></canvas>
@@ -136,12 +251,27 @@ const ctx = canvas.getContext('2d');
 const coinsTxt = document.getElementById('coins-txt');
 const livesTxt = document.getElementById('lives-txt');
 
+// Elementos de UI dos Menus
+const mainMenu = document.getElementById('main-menu');
+const pauseMenu = document.getElementById('pause-menu');
+const levelsMenu = document.getElementById('levels-menu');
+const btnPauseTop = document.getElementById('btn-pause-top');
+const btnPlay = document.getElementById('btn-play');
+const btnFasesMenu = document.getElementById('btn-fases-menu');
+const btnResume = document.getElementById('btn-resume');
+const btnRetry = document.getElementById('btn-retry');
+const btnMenuBack = document.getElementById('btn-menu-back');
+const btnBackMain = document.getElementById('btn-back-main');
+const levelsGrid = document.getElementById('levels-grid');
+
 let currentLevel = 1;
 const maxLevels = 20;
 let coinsCollected = 0;
 let lives = 3;
 let gameOver = false;
 let gameWon = false;
+let isPaused = false;
+let inMainMenu = true;
 let gameTime = 0;
 
 const keys = {};
@@ -164,6 +294,77 @@ function setupBtn(id, controlProp) {
 setupBtn('btn-left', 'left');
 setupBtn('btn-right', 'right');
 setupBtn('btn-jump', 'jump');
+
+// Gerar botões de seleção de fases
+for (let i = 1; i <= maxLevels; i++) {
+    const lvlBtn = document.createElement('div');
+    lvlBtn.className = 'lvl-btn';
+    lvlBtn.innerText = i;
+    lvlBtn.onclick = () => {
+        currentLevel = i;
+        levelsMenu.style.display = 'none';
+        startGame();
+    };
+    levelsGrid.appendChild(lvlBtn);
+}
+
+// Lógica dos Botões de Menu e Pause
+btnPlay.onclick = () => {
+    startGame();
+};
+
+btnFasesMenu.onclick = () => {
+    mainMenu.style.display = 'none';
+    levelsMenu.style.display = 'flex';
+};
+
+btnBackMain.onclick = () => {
+    levelsMenu.style.display = 'none';
+    mainMenu.style.display = 'flex';
+};
+
+btnPauseTop.onclick = () => {
+    if (inMainMenu) return;
+    isPaused = true;
+    pauseMenu.style.display = 'flex';
+};
+
+btnResume.onclick = () => {
+    isPaused = false;
+    pauseMenu.style.display = 'none';
+};
+
+btnRetry.onclick = () => {
+    isPaused = false;
+    pauseMenu.style.display = 'none';
+    lives = 3;
+    coinsCollected = 0;
+    coinsTxt.innerText = coinsCollected;
+    livesTxt.innerText = lives;
+    gameOver = false;
+    gameWon = false;
+    loadLevel(currentLevel);
+};
+
+btnMenuBack.onclick = () => {
+    isPaused = false;
+    inMainMenu = true;
+    pauseMenu.style.display = 'none';
+    mainMenu.style.display = 'flex';
+};
+
+function startGame() {
+    inMainMenu = false;
+    isPaused = false;
+    mainMenu.style.display = 'none';
+    lives = 3;
+    coinsCollected = 0;
+    coinsTxt.innerText = coinsCollected;
+    livesTxt.innerText = lives;
+    gameOver = false;
+    gameWon = false;
+    loadLevel(currentLevel);
+}
 
 const camera = { x: 0, y: 0 };
 
@@ -339,7 +540,7 @@ function loadLevel(lvl) {
 
 // ATUALIZAÇÃO DO JOGO
 function update() {
-    if (gameOver || gameWon) return;
+    if (gameOver || gameWon || isPaused || inMainMenu) return;
     gameTime++;
 
     const moveLeft = keys['KeyA'] || keys['ArrowLeft'] || touchControls.left;
