@@ -579,7 +579,7 @@ function update() {
     if (player.isDashing) {
         player.dashTimer--;
         player.vy = 0;
-        const dashSpeed = 12;
+        const dashSpeed = 16;
         player.vx = player.facing === 'right' ? dashSpeed : -dashSpeed;
 
         if (player.dashTimer <= 0) {
@@ -611,65 +611,71 @@ function update() {
 
     player.grounded = false;
 
-    // Colisão Plataformas
-    platforms.forEach(p => {
-        if (player.x < p.x + p.width &&
-            player.x + player.width > p.x &&
-            player.y + player.height > p.y &&
-            player.y + player.height < p.y + p.height + player.vy + 4) {
-            
-            if (player.vy > 0) {
-                player.grounded = true;
-                player.vy = 0;
-                player.y = p.y - player.height;
+    // Apenas verifica colisões com plataformas, água e inimigos se NÃO estiver dando Dash
+    if (!player.isDashing) {
+        // Colisão Plataformas
+        platforms.forEach(p => {
+            if (player.x < p.x + p.width &&
+                player.x + player.width > p.x &&
+                player.y + player.height > p.y &&
+                player.y + player.height < p.y + p.height + player.vy + 4) {
+                
+                if (player.vy > 0) {
+                    player.grounded = true;
+                    player.vy = 0;
+                    player.y = p.y - player.height;
+                }
             }
-        }
-    });
+        });
 
-    // Colisão Água
-    waterZones.forEach(w => {
-        if (player.x + player.width > w.x && player.x < w.x + w.width && player.y + player.height > w.y + 20) {
-            createSplash(player.x + player.width / 2, player.y + player.height);
+        // Colisão Água
+        waterZones.forEach(w => {
+            if (player.x + player.width > w.x && player.x < w.x + w.width && player.y + player.height > w.y + 20) {
+                createSplash(player.x + player.width / 2, player.y + player.height);
+                takeDamage();
+            }
+        });
+
+        if (player.y > canvas.height + 100) {
             takeDamage();
         }
-    });
 
-    if (player.y > canvas.height + 100) {
-        takeDamage();
+        // Inimigos
+        enemies.forEach((enemy, index) => {
+            if (enemy.flashTimer > 0) enemy.flashTimer--;
+
+            if (player.x < enemy.x + enemy.width &&
+                player.x + player.width > enemy.x &&
+                player.y < enemy.y + enemy.height &&
+                player.y + player.height > enemy.y) {
+                
+                if (player.vy > 0 && player.y + player.height - player.vy <= enemy.y + 16) {
+                    player.vy = -player.jumpForce * 0.65;
+                    enemy.hp--;
+                    enemy.flashTimer = 18;
+
+                    if (enemy.hp <= 0) {
+                        createSmoke(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+                        enemies.splice(index, 1);
+                        coinsCollected += 3;
+                        coinsTxt.innerText = coinsCollected;
+                    }
+                } else {
+                    takeDamage();
+                }
+            }
+        });
     }
 
-    // Inimigos Gelatina Verde / Lesma
-    enemies.forEach((enemy, index) => {
+    // Atualização de movimento dos inimigos (acontece independente do dash)
+    enemies.forEach(enemy => {
         enemy.x += enemy.vx;
         if (enemy.x <= enemy.minX || enemy.x >= enemy.maxX) {
             enemy.vx *= -1;
         }
-
-        if (enemy.flashTimer > 0) enemy.flashTimer--;
-
-        if (player.x < enemy.x + enemy.width &&
-            player.x + player.width > enemy.x &&
-            player.y < enemy.y + enemy.height &&
-            player.y + player.height > enemy.y) {
-            
-            if (player.vy > 0 && player.y + player.height - player.vy <= enemy.y + 16) {
-                player.vy = -player.jumpForce * 0.65;
-                enemy.hp--;
-                enemy.flashTimer = 18;
-
-                if (enemy.hp <= 0) {
-                    createSmoke(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
-                    enemies.splice(index, 1);
-                    coinsCollected += 3;
-                    coinsTxt.innerText = coinsCollected;
-                }
-            } else {
-                takeDamage();
-            }
-        }
     });
 
-    // Moedas
+    // Moedas (podem ser coletadas durante o dash)
     coins.forEach(c => {
         if (!c.collected && 
             player.x < c.x + 32 && player.x + player.width > c.x &&
@@ -911,9 +917,13 @@ function draw() {
         ctx.fillRect(fx + flag.width, flag.y + 20, 50, 25);
     }
 
-    // Personagem
+    // Personagem (Efeito de transparência no Dash)
     let px = player.x - camera.x;
     let py = player.y;
+
+    if (player.isDashing) {
+        ctx.globalAlpha = 0.5; // Transparência fantasma durante o Dash
+    }
 
     ctx.fillStyle = '#ef4444';
     ctx.fillRect(px + 4, py, 24, 8);
@@ -935,6 +945,8 @@ function draw() {
     ctx.fillStyle = '#78350f';
     ctx.fillRect(px + 2, py + 40, 12, 8);
     ctx.fillRect(px + 18, py + 40, 12, 8);
+
+    ctx.globalAlpha = 1.0;
 
     drawParticles();
 
